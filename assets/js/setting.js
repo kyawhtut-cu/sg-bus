@@ -18,7 +18,7 @@
 
 	const init = () => {
 		const columnCountSelect = $('<select>', {
-			'id': 'columnCount'
+			id: 'columnCount'
 		})
 		columnCountSelect.append(`<option value="" disabled selected>Choose columns</option>`)
 		const columnCount = Repo.getColumnCount()
@@ -28,7 +28,7 @@
 			columnCountSelect.append(option)
 		}
 		const columnCountDiv = $('<div>', {
-			'class': 'input-field col-md-5 col-sm-12 mb-0'
+			class: 'input-field col-md-5 col-sm-12 mb-0'
 		})
 		columnCountDiv.append(columnCountSelect)
 		columnCountDiv.append(
@@ -36,63 +36,64 @@
 		)
 
 		const headerDiv = $('<div>', {
-			'class': 'row align-items-center mb-0'
+			class: 'row align-items-center mb-0'
 		})
 		headerDiv.append(
 			$('<h4>', {
-				'class': 'col-md-7 col-sm-12'
+				class: 'col-md-7 col-sm-12'
 			}).text('Setting')
 		)
 		headerDiv.append(columnCountDiv)
 
 		settingCardList = $('<div>', {
-			'style': 'flex-grow: 1; overflow-y: auto; padding: 0 24px;'
+			style: 'flex-grow: 1; overflow-y: auto; padding: 0 24px;'
 		})
 
 		const contentDiv = $('<div>', {
-			'style': 'height: calc(100% - 56px); display: flex; flex-direction: column;'
+			style: 'height: calc(100% - 56px); display: flex; flex-direction: column;'
 		})
 		contentDiv.append(
 			$('<div>', {
-				'class': 'container-fluid',
-				'style': 'padding: .912rem 24px 0px 24px;'
+				class: 'container-fluid',
+				style: 'padding: .912rem 24px 0px 24px;'
 			}).append(headerDiv)
 		)
 		contentDiv.append(settingCardList)
 
 		const btnAddNew = $('<button>', {
-			'class': 'waves-effect waves-light btn-center btn-flat'
+			class: 'waves-effect waves-light btn-flat d-flex justify-content-center align-items-center'
 		})
 		btnAddNew.append(
 			$('<i>', {
-				'class': 'material-icons'
+				class: 'material-icons',
+				style: 'margin-right: 8px'
 			}).text('add')
 		)
-		btnAddNew.text('Add New')
+		btnAddNew.append('Add New')
 		btnAddNew.on('click', onClickAddNew)
 
 		const btnCancel = $('<button>', {
-			'id': 'btnCancel',
-			'class': 'waves-effect waves-light btn-center btn-flat'
+			id: 'btnCancel',
+			class: 'waves-effect waves-light btn-flat d-flex justify-content-center align-items-center'
 		})
 		btnCancel.text('Cancel')
 
 		const btnSave = $('<button>', {
-			'id': 'btnSave',
-			'class': 'waves-effect waves-light btn-center btn-flat'
+			id: 'btnSave',
+			class: 'waves-effect waves-light btn-flat d-flex justify-content-center align-items-center'
 		})
 		btnSave.text('Save')
 		
 		const footerDiv = $('<div>', {
-			'class': 'modal-footer',
-			'style': 'border-top: unset;'
+			class: 'modal-footer',
+			style: 'border-top: unset;'
 		})
 		footerDiv.append(btnAddNew)
 		footerDiv.append(btnCancel)
 		footerDiv.append(btnSave)
 
 		dialogDiv = $('<div>', {
-			'class': 'modal modal-fixed-footer'
+			class: 'modal modal-fixed-footer'
 		})
 
 		dialogDiv.append(contentDiv)
@@ -224,10 +225,10 @@
 	function getCard(busService) {
 		/* Bus Stop Input */
 		const busStopNameInput = $('<input>', {
-			'id': `busStopName${busService.index}`,
-			'type': 'text',
-			'class': 'autocomplete busStopName',
-			'value': busService.bus_stop_name ?? ``
+			id: `busStopName${busService.index}`,
+			type: 'text',
+			class: 'autocomplete busStopName',
+			value: busService.bus_stop_name ?? ``
 		})
 		busStopNameInput.on('blur', function () {
 			setTimeout(function() {
@@ -257,7 +258,7 @@
 			}, 100)
 		})
 		const busStopNameLabel = $('<label>', {
-			'for': `busStopName${busService.index}`
+			for: `busStopName${busService.index}`
 		}).text('Bus Stop Name')
 		if(busService.bus_stop_name) {
 			busStopNameLabel.addClass('active')
@@ -270,7 +271,7 @@
 
 		/* Bus Service No Input */
 		const busServiceNoInput = $('<select>', {
-			'id': `busServiceNo${busService.index}`
+			id: `busServiceNo${busService.index}`
 		})
 		setBusServiceNoList(busService, busServiceNoInput)
 		busServiceNoInput.on('change', function() {
@@ -284,13 +285,13 @@
 		})
 		const busServiceNoLabel = $('<label>').text('Bus Service No.')
 		const busServiceNo = $('<div>', {
-			'class': 'input-field w-100'
+			class: 'input-field w-100'
 		})
 		busServiceNo.append(busServiceNoInput)
 		busServiceNo.append(busServiceNoLabel)
 
 		const btnTrash = $('<i>', {
-			'class': 'material-icons waves-effect btn-flat setting-trash'
+			class: 'material-icons waves-effect btn-flat setting-trash position-absolute'
 		}).text('delete_forever')
 
 		btnTrash.on('click', function () {
@@ -299,13 +300,13 @@
 		})
 
 		const label = $('<h4>', {
-			'class': 'grey-text text-lighten-1'
+			class: 'grey-text text-lighten-1'
 		})
 		label.text(busService.bus_label)
 
 		const card = $('<div>', {
-			'class': 'card-panel',
-			'style': 'position: relative;'
+			class: 'card-panel',
+			style: 'position: relative;'
 		})
 		card.append(label)
 		card.append(busStopName)
@@ -363,7 +364,7 @@
 	function onDestroy() {
 		setTimeout(() => {
 			dialogDiv.remove()
-		}, 1000)
+		}, 300)
 	}
 
 }(jQuery))

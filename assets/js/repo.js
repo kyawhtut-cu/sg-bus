@@ -60,7 +60,17 @@
 		localStorage.setItem('column_count', value)
 	}
 
-	async function onFetchBusArrival(busServiceNo, busStopCode) {
+	async function onFetchBusArrival(savedBusList) {
+		let result = await Promise.all(
+			savedBusList.map( savedBus => {
+				return ApiService.onFetchBusArrival(
+					savedBus.bus_service_no,
+					savedBus.bus_stop_code
+				)
+			})
+		)
+		return result.filter( service => service != null)
+
 		return ApiService.onFetchBusArrival(
 			busServiceNo,
 			busStopCode

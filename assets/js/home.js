@@ -17,7 +17,10 @@
 	function showLoading() {
 		if ($('#home')) $('#home').remove()
 		$('body').append(
-			`<div id="update" class="vh-100"></div>`
+			$('<div>', {
+				id: 'update',
+				class: 'vh-100'
+			})
 		)
 
 		bodymovin.loadAnimation({
@@ -32,22 +35,22 @@
 	async function showHome() {
 		if ($('#update')) $('#update').remove()
 		gridDiv = $('<div>', {
-			'class': 'row h-100'
+			class: 'row h-100'
 		})
 		$('body').append(
 			$('<div>', {
-				'class': 'container-fluid vh-100 p-0',
-				'id': 'home'
+				id: 'home',
+				class: 'container-fluid vh-100 p-0'
 			}).append(gridDiv)
 		)
 
 		const fab = $('<button>', {
-			'id': 'btnSetting',
-			'class': 'btn-floating btn-large waves-effect waves-light deep-orange',
-			'style': 'position: fixed; bottom: 16px; right: 16px;'
+			id: 'btnSetting',
+			class: 'btn-floating btn-large waves-effect waves-light deep-orange position-fixed',
+			style: 'bottom: 16px; right: 16px;'
 		}).append(
 			$('<i>', {
-				'class': 'material-icons'
+				class: 'material-icons'
 			}).text('settings')
 		)
 		fab.on('click', async function() {
@@ -83,13 +86,13 @@
 			})
 		})
 
-		onFetchLiveBus(savedBusList)
+		onListenLiveBus(savedBusList, liveBusGrid.length)
 	}
 
 	function getLiveBus(savedBus, largeColumnCount) {
 		const col = $(`<div>`, {
-			'class': 'column',
-			'style': 'padding-top: .5rem'
+			class: 'column',
+			style: 'padding-top: .25rem'
 		})
 		if (largeColumnCount == 12) {
 			col.addClass('col-12')
@@ -97,17 +100,25 @@
 			col.addClass(`col-lg-${largeColumnCount} col-md-12 col-sm-12`)
 		}
 
-		col.append(
-			`
-				<div class="w-100 header">
-					<div class="busServiceNo">${savedBus.bus_service_no}</div>
-					<div class="busStopName">${savedBus.bus_stop_name}</div>
-				</div>
-			`
+		const headerDiv = $('<div>', {
+			class: 'w-100 bg-light d-flex header'
+		})
+		headerDiv.append(
+			$('<div>', {
+				class: 'h-100 text-white red d-flex justify-content-center align-items-center fw-bold busServiceNo'
+			}).text(savedBus.bus_service_no)
 		)
+		headerDiv.append(
+			$('<div>', {
+				class: 'h-100 red-text d-flex justify-content-center align-items-center fw-bold busStopName'
+			}).text(savedBus.bus_stop_name)
+		)
+		col.append(headerDiv)
+
 		const liveDiv = $('<div>', {
-			'id': `busLive${savedBus.bus_service_no}${savedBus.bus_stop_code}`,
-			'style': 'height: calc(100% - 56px); display: flex; align-items: center; justify-content: center;',
+			id: `busLive${savedBus.bus_service_no}${savedBus.bus_stop_code}`,
+			class: ` d-flex justify-content-center align-items-center`,
+			style: 'height: calc(100% - 56px);',
 		})
 		liveDiv.append(getCardLoading())
 		col.append(liveDiv)
@@ -171,16 +182,42 @@
 		`
 	}
 
-	function getBusArrival(busServiceList) {
+	async function onListenLiveBus(savedBusList, row) {
+		if(timeoutId) clearTimeout(timeoutId)
+
+		const busArrivalList = await Repo.onFetchBusArrival(savedBusList)
+
+		busArrivalList.forEach( service => {
+			const busLiveDiv = $(`#busLive${service.bus_service_no}${service.bus_stop_code}`)
+			busLiveDiv.empty()
+			busLiveDiv.append(
+				getBusArrival(
+					_.first(service.bus_service_list),
+					row
+				)
+			)
+		})
+
+		timeoutId = setTimeout(() => {
+			onListenLiveBus(savedBusList, row)
+		}, 1000 * 10)
+	}
+
+	function getBusArrival(busServiceList, rowCount) {
 		const row = $('<div>', {
-			'class': 'row mb-0',
-			'style': 'width: 70%;'
+			class: 'row w-100 h-100',
+			style: 'margin-bottom: .25rem;'
 		})
 		if (!busServiceList || busServiceList.NextBus.EstimatedArrival == '') {
 			row.append(
-				`
-					<div style="display: flex; justify-content: center; font-size: 32px; font-weight: 700;" class="grey-text text-lighten-1">Not in operation.</div>
-				`
+				$('<div>', {
+					class: 'col-12'
+				}).append(
+					$('<div>', {
+						class: `w-100 h-100 d-flex justify-content-center align-items-center grey-text text-lighten-1 fw-bold`,
+						style: `font-size: 32px;"`
+					}).text(`Not in operation.`)
+				)
 			)
 			return row
 		}
@@ -190,10 +227,10 @@
 		// Col 1
 		row.append(
 			$('<div>', {
-				'class': `col-${isHasBusTwo ? 6 : 12}`,
-				'style': `padding: .5rem .5rem 0 0; ${isHasBusTwo ? `` : `display: flex; justify-content: center;`};`
+				class: `col-${isHasBusTwo ? 6 : 12} ${isHasBusTwo ? `` : `d-flex justify-content-center`}`,
+				style: `padding: .5rem .5rem 0 0;`
 			}).append(
-				getNextBusCard(!isHasBusTwo, busServiceList.NextBus)
+				getNextBusCard(!isHasBusTwo, busServiceList.NextBus, rowCount)
 			)
 		)
 
@@ -201,10 +238,11 @@
 			// Col 2
 			row.append(
 				$('<div>', {
-					'class': 'col-6',
-					'style': `padding: .5rem .5rem 0 0;`
+					class: 'col-6',
+					style: `padding: .5rem .5rem 0 0;`
 				}).append(
-				getNextBusCard(false, busServiceList.NextBus2))
+					getNextBusCard(false, busServiceList.NextBus2, rowCount)
+				)
 			)
 		}
 
@@ -212,10 +250,11 @@
 			// Col 3
 			row.append(
 				$('<div>', {
-					'class': 'col-12',
-					'style': `padding: .5rem .5rem 0 0; display: flex; justify-content: center;`
+					class: 'col-12 d-flex justify-content-center',
+					style: `padding: .5rem .5rem 0 0;`
 				}).append(
-				getNextBusCard(true, busServiceList.NextBus3))
+					getNextBusCard(true, busServiceList.NextBus3, rowCount)
+				)
 			)
 			
 		}
@@ -223,56 +262,40 @@
 		return row
 	}
 
-	function getNextBusCard(isOnlyOne, nextBus) {
+	function getNextBusCard(isOnlyOne, nextBus, row) {
 		const min = convertArrivalMin(nextBus.EstimatedArrival)
 		const div = $('<div>', {
-			'class': 'grey lighten-1 grey-text text-darken-4',
-			'style': `${!isOnlyOne ? `` : `width: 50%;`} height: 82px; border-left: solid 8px ${nextBus.Load == 'SEA' ? `#00D748` : nextBus.Load == 'SDA' ? `#FFDD00` : `#FF1AC6`}; font-size: ${min == 'Arr' ? `42px` : `56px`}; font-weight: 700; padding-left: .5rem; display: flex; align-items: center; position: relative; border-radius: 8px;`
+			class: `w-${isOnlyOne ? 75 : 100} h-100 black ${nextBus.Load == 'SEA' ? `green-text text-accent-4` : nextBus.Load == 'SDA' ? `amber-text` : `red-text`} fw-bold d-flex justify-content-center align-items-center position-relative`,
+			style: `font-size: calc(100vh / ${row * (min == 'Left' || min == 'Arr' ? 4.5 : 3)}); border-radius: 8px; line-height: 0;`
 		})
 		div.append(min)
-		if (nextBus.Type == "BD") {
-			div.append($('<i>', {
-				'style': `width: 24px; height: 24px; position: absolute; top: .5rem; right: .5rem; font-size: 24px; background-image: url('bendy-bus.svg'); background-size: contain; background-repeat: no-repeat; display: inline-block;`
-			}))
-		} else if (nextBus.Type == "DD") {
-			div.append($('<i>', {
-				'style': `width: 24px; height: 24px; position: absolute; top: .5rem; right: .5rem; font-size: 24px; background-image: url('double-bus.svg'); background-size: contain; background-repeat: no-repeat; display: inline-block;`
-			}))
-		} else {
-			div.append($('<i>', {
-				'class': 'material-icons',
-				'style': 'position: absolute; top: .5rem; right: .5rem; font-size: 24px;'
-			}).text('directions_bus'))
-		}
+		div.append(
+			$('<span>', {
+				class: 'position-absolute',
+				style: `bottom: 1rem; left: .5rem; font-size: calc(100vh / 50);`
+			}).text(
+				nextBus.Type == 'BD' ? 'Bendy' : nextBus.Type == 'DD' ? 'Double' : 'Single'
+			)
+		)
 		if (nextBus.Feature == "WAB") {
 			div.append($('<i>', {
-				'class': 'material-icons',
-				'style': 'position: absolute; top: calc(28px + .5rem); right: .5rem; font-size: 24px;'
+				class: 'material-icons position-absolute',
+				style: 'bottom: .5rem; right: .5rem;'
 			}).text('accessible'))
 		}
 		return div
 	}
 
 	async function onFetchLiveBus(savedBusList) {
-		if(timeoutId) clearTimeout(timeoutId)
-
-		const result = await Promise.all(
-			savedBusList.map((savedBus) => {
+		let result = await Promise.all(
+			savedBusList.map( savedBus => {
 				return Repo.onFetchBusArrival(
 					savedBus.bus_service_no,
 					savedBus.bus_stop_code
 				)
 			})
 		)
-		result.forEach( service => {
-			const busLiveDiv = $(`#busLive${service.bus_service_no}${service.bus_stop_code}`)
-			busLiveDiv.empty()
-			busLiveDiv.append(getBusArrival(_.first(service.bus_service_list)))
-		})
-
-		timeoutId = setTimeout(() => {
-			onFetchLiveBus(savedBusList)
-		}, 1000 * 30)
+		return result.filter( service => service != null)
 	}
 
 	function convertArrivalMin(value) {
@@ -287,11 +310,11 @@
 		const sec = Math.floor((arrival - now) / 1000)
 		let min = Math.floor(sec / 60)
 
-		if (min === 0) {
-			min = 1
+		if (min == -2) {
+			return "Left"
 		}
 
-		if (sec <= 30) {
+		if (min <= 1 && min >= -1) {
 			return "Arr"
 		}
 
