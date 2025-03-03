@@ -227,7 +227,7 @@
 		// Col 1
 		row.append(
 			$('<div>', {
-				class: `col-${isHasBusTwo ? 6 : 12} ${isHasBusTwo ? `` : `d-flex justify-content-center`}`,
+				class: `col-lg-${isHasBusTwo ? 6 : 12} col-md-12 col-sm-12 ${isHasBusTwo ? `` : `d-flex justify-content-center`}`,
 				style: `padding: .5rem .5rem 0 0;`
 			}).append(
 				getNextBusCard(!isHasBusTwo, busServiceList.NextBus, rowCount)
@@ -238,7 +238,7 @@
 			// Col 2
 			row.append(
 				$('<div>', {
-					class: 'col-6',
+					class: 'col-lg-6 col-md-12 col-sm-12',
 					style: `padding: .5rem .5rem 0 0;`
 				}).append(
 					getNextBusCard(false, busServiceList.NextBus2, rowCount)
@@ -265,14 +265,14 @@
 	function getNextBusCard(isOnlyOne, nextBus, row) {
 		const min = convertArrivalMin(nextBus.EstimatedArrival)
 		const div = $('<div>', {
-			class: `w-${isOnlyOne ? 75 : 100} h-100 black ${nextBus.Load == 'SEA' ? `green-text text-accent-4` : nextBus.Load == 'SDA' ? `amber-text` : `red-text`} fw-bold d-flex justify-content-center align-items-center position-relative`,
+			class: `w-100 h-100 black ${nextBus.Load == 'SEA' ? `green-text text-accent-4` : nextBus.Load == 'SDA' ? `amber-text` : `red-text`} fw-bold d-flex justify-content-center align-items-center position-relative`,
 			style: `font-size: calc(100vh / ${row * (min == 'Left' || min == 'Arr' ? 4.5 : 3)}); border-radius: 8px; line-height: 0;`
 		})
 		div.append(min)
 		div.append(
 			$('<span>', {
 				class: 'position-absolute',
-				style: `bottom: 1rem; left: .5rem; font-size: calc(100vh / 50);`
+				style: `bottom: 1.3rem; left: 1rem; font-size: calc(100vh / 50);`
 			}).text(
 				nextBus.Type == 'BD' ? 'Bendy' : nextBus.Type == 'DD' ? 'Double' : 'Single'
 			)
@@ -280,7 +280,7 @@
 		if (nextBus.Feature == "WAB") {
 			div.append($('<i>', {
 				class: 'material-icons position-absolute',
-				style: 'bottom: .5rem; right: .5rem;'
+				style: 'bottom: .5rem; right: 1rem;'
 			}).text('accessible'))
 		}
 		return div

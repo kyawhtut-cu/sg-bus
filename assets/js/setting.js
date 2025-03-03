@@ -133,7 +133,7 @@
 					is_show_error: false
 				}
 
-				onAddCard(object, savedBusList.length == index + 1)
+				onAddCard(object)
 				
 				return object
 			})
@@ -195,7 +195,7 @@
 		}
 
 		busServiceList.push(newCard)
-		onAddCard(_.last(busServiceList), true)
+		onAddCard(_.last(busServiceList))
 
 		settingCardList.animate(
 			{
@@ -205,64 +205,65 @@
 		)
 	}
 
-	function onAddCard(busService, isApplyAutoComplete) {
+	function onAddCard(busService) {
 		settingCardList.append(getCard(busService))
 
-		$(`#busServiceNo${busService.index}`).formSelect()
+		setBusServiceNoList(busService)
 
-		if (!isApplyAutoComplete) return
-		let data = {}
-		busStopList.forEach(busStop => data[busStop.bus_stop_name] = null )
-		$(`input.busStopName`).autocomplete({
-			data,
-			limit: 5,
-			onAutocomplete: function(val) {
-			},
-			minLength: 0
+		var data = []
+		busStopList.forEach(busStop => data.push({
+			id: busStop.bus_stop_code,
+			text: `${busStop.bus_stop_code}-${busStop.bus_stop_name}`,
+			bus_stop_name: busStop.bus_stop_name,
+			selected: busStop.bus_stop_code == busService.bus_stop_code
+		}) )
+
+		$(`#busStopName${busService.index}`).select2({
+			placeholder: 'Select Bus Stop',
+			data: data,
+			dropdownAutoWidth: false,
+			templateSelection: (selection) => {
+				return selection.bus_stop_name ?? selection.text
+			}
 		})
+
+		if (busService.bus_stop_code == '') {
+			$(`#busStopName${busService.index}`).val(null).trigger('change')
+		}
 	}
 
 	function getCard(busService) {
 		/* Bus Stop Input */
-		const busStopNameInput = $('<input>', {
+		const busStopNameInput = $('<select>', {
 			id: `busStopName${busService.index}`,
-			type: 'text',
-			class: 'autocomplete busStopName',
+			class: 'busStopName',
 			value: busService.bus_stop_name ?? ``
 		})
-		busStopNameInput.on('blur', function () {
-			setTimeout(function() {
-				if (busService.bus_stop_name != busStopNameInput.val()) {
-					busService = _.set(busService, 'bus_service_no', '')
-				}
-				busService = _.set(busService, 'bus_stop_name', busStopNameInput.val())
-				busService = _.set(
-					busService,
-					'bus_stop_code',
-					_.find(
-						busStopList, 
-						{
-							bus_stop_name : busService.bus_stop_name
-						}
-					)?.bus_stop_code
-				)
-				onDataUpdateByIndex(
-					busService.index,
-					busService
-				)
-				setBusServiceNoList(
-					busService,
-					busServiceNoInput
-				)
-				busServiceNoInput.formSelect()
-			}, 100)
+		busStopNameInput.on('select2:select', function (e) {
+			const data = e.params.data
+			if (busService.bus_stop_name != data.id) {
+				busService = _.set(busService, 'bus_service_no', '')
+			}
+			busService = _.set(busService, 'bus_stop_name', data.bus_stop_name)
+			busService = _.set(
+				busService,
+				'bus_stop_code',
+				_.find(
+					busStopList, 
+					{
+						bus_stop_name : busService.bus_stop_name
+					}
+				)?.bus_stop_code
+			)
+			onDataUpdateByIndex(
+				busService.index,
+				busService
+			)
+			setBusServiceNoList(busService)
 		})
 		const busStopNameLabel = $('<label>', {
-			for: `busStopName${busService.index}`
+			class: 'active'
 		}).text('Bus Stop Name')
-		if(busService.bus_stop_name) {
-			busStopNameLabel.addClass('active')
-		}
 		const busStopName = $('<div>', {
 			'class': 'input-field w-100'
 		})
@@ -273,9 +274,9 @@
 		const busServiceNoInput = $('<select>', {
 			id: `busServiceNo${busService.index}`
 		})
-		setBusServiceNoList(busService, busServiceNoInput)
-		busServiceNoInput.on('change', function() {
-			busService = _.set(busService, 'bus_service_no', $(this).val())
+		busServiceNoInput.on('select2:select', function(e) {
+			const data = e.params.data
+			busService = _.set(busService, 'bus_service_no', data.id)
 			busService = _.set(busService, 'is_error', false)
 			busService = _.set(busService, 'is_show_error', false)
 			onDataUpdateByIndex(
@@ -283,7 +284,9 @@
 				busService
 			)
 		})
-		const busServiceNoLabel = $('<label>').text('Bus Service No.')
+		const busServiceNoLabel = $('<label>', {
+			class: 'active'
+		}).text('Bus Service No.')
 		const busServiceNo = $('<div>', {
 			class: 'input-field w-100'
 		})
@@ -316,35 +319,33 @@
 		return card
 	}
 
-	function setBusServiceNoList(busService, select) {
-		select.empty()
-
-		const selectedBusServiceNo = busService.bus_service_no
-		const optionList = _.find(
-			busStopList, 
+	function setBusServiceNoList(busService) {
+		var data = []
+		_.find(
+			busStopList,
 			{
-				bus_stop_name : busService.bus_stop_name
+				bus_stop_name: busService.bus_stop_name
 			}
-		)?.bus_service_no_list?.map( serviceNo => {
-			const option = new Option(serviceNo, serviceNo)
-			$(option).prop('selected', serviceNo == selectedBusServiceNo)
-			return option
-		}) ?? []
-		select.prop('disabled', _.isEmpty(optionList))
-
-		const defaultOption = new Option("Choose Bus Service No.", "-1")
-		$(defaultOption).prop('disabled', true)
-		$(defaultOption).prop('selected', selectedBusServiceNo ? false : true)
-		select.append(defaultOption)
-
-		optionList.forEach( option => {
-			select.append(option)
+		)?.bus_service_no_list?.forEach ( serviceNo => {
+			data.push({
+				id: serviceNo,
+				text: serviceNo,
+				selected: busService.bus_service_no == serviceNo
+			})
+		})
+		$(`#busServiceNo${busService.index}`).empty()
+		$(`#busServiceNo${busService.index}`).select2({
+			placeholder: 'Select Bus Service No',
+			data: data
 		})
 
-		busService = _.set(busService, 'is_error', selectedBusServiceNo == '')
-		if(selectedBusServiceNo != '') {
+		busService = _.set(busService, 'is_error', busService.bus_service_no == '')
+
+		if (busService.bus_service_no == '') {
 			busService = _.set(busService, 'is_show_error', false)
+			$(`#busServiceNo${busService.index}`).val(null).trigger('change')
 		}
+
 		onDataUpdateByIndex(
 			busService.index,
 			busService

@@ -9,7 +9,7 @@
 	<meta name="HandheldFriendly" content="True"/>
 	<meta name="robots" content="noindex,nofollow"/>
 
-	<title>Materialize CSS Modal with Click Event</title>
+	<title>SG Bus</title>
 
 	<link 
 		href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css"
@@ -33,18 +33,21 @@
 
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-	<script src="https://cdn.jsdelivr.net/npm/dexie@3.0.3/dist/dexie.js"></script>
+	<!-- <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"> -->
+	<link rel="stylesheet" type="text/css" href="./assets/css/select2.css">
 
 	<style>
 
 		.column {
 			background: #fafafa;
 		}
+
 		.column .header {
 			transition: box-shadow .25s, -webkit-box-shadow .25s;
 			border-radius: 7px;
 			box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14),0 3px 1px -2px rgba(0,0,0,0.12),0 1px 5px 0 rgba(0,0,0,0.2);height: 56px;
 		}
+
 		.header .busServiceNo {
 			min-width: 100px;
 			padding: 0 1.5rem;
@@ -70,9 +73,6 @@
 			cursor: pointer;
 		}
 
-		.select-dropdown {
-			height: 200px;
-		}
 	</style>
 </head>
 <body>
@@ -85,12 +85,15 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.5.9/lottie.js"></script>
+	<!-- <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> -->
+	<script src="https://cdn.jsdelivr.net/npm/dexie@3.0.3/dist/dexie.js"></script>
 	<script src="assets/js/api.js"></script>
 	<script src="assets/js/apiService.js"></script>
 	<script src="assets/js/setting.js"></script>
 	<script src="assets/js/db.js"></script>
 	<script src="assets/js/repo.js"></script>
 	<script src="assets/js/home.js"></script>
+	<script src="assets/js/select2.js"></script>
 	<script>
 		$(document).ready(async function () {
 
@@ -102,7 +105,7 @@
 			await Db.initData()
 			if (Repo.isNeedToDataUpdate()) {
 				Home.showLoading()
-				Repo.onUpdateData()
+				await Repo.onUpdateData()
 			}
 			Home.showHome()
 
