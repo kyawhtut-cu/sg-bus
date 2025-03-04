@@ -1,11 +1,11 @@
 (function (jQuery) {
 	"use strict"
 
-	const SG_BUS_DB = "sg_bus"
-	const SG_BUS_RESPONSE_DB = "sg_bus_response"
+	jQuery.SG_BUS_DB = "sg_bus"
+	jQuery.SG_BUS_RESPONSE_DB = "sg_bus_response"
 
-	const db = new Dexie(SG_BUS_DB)
-	const responseDb = new Dexie(SG_BUS_RESPONSE_DB)
+	const db = new Dexie(jQuery.SG_BUS_DB)
+	const responseDb = new Dexie(jQuery.SG_BUS_RESPONSE_DB)
 
 	jQuery.Db = function () {
 		return new Db()
@@ -20,6 +20,7 @@
 			getResponseBusServiceList,
 			getResponseBusRouteList,
 			getBusStopByStopCode,
+			getBusServiceByServiceNo,
 			onInsertLiveBusServiceList,
 			onInsertBusStopList,
 			onInsertBusServiceList,
@@ -31,14 +32,12 @@
 			onClearBusStopResponse,
 			onClearLiveBusService,
 			onClearBusStop,
-			onClearBusService
+			onClearBusService,
+			onDropDb
 		}
 	}
 
 	const initData = async () => {
-		// onDropDb(SG_BUS_DB)
-		// onDropDb(SG_BUS_RESPONSE_DB)
-
 		responseDb.version(1).stores(
 			{
 				bus_route_response: '++id, BusStopCode, RoadName, Description, Latitude, Longitude',
@@ -79,7 +78,15 @@
 	}
 
 	const getBusStopByStopCode = async (stopCode) => {
-		return db.bus_stop_table.where('bus_stop_code').equals(stopCode).toArray()
+		return _.first(
+			await db.bus_stop_table.where('bus_stop_code').equals(stopCode).toArray()
+		)
+	}
+
+	const getBusServiceByServiceNo = async (serviceNo) => {
+		return _.first(
+			await db.bus_service_table.where('bus_service_no').equals(serviceNo).toArray()
+		)
 	}
 
 	const onInsertLiveBusServiceList = async (list) => {
@@ -129,8 +136,8 @@
 		db.bus_service_table.clear()
 	}
 
-	const onDropDb = (dbName) => {
-		Dexie.delete(dbName).then(() => {
+	const onDropDb = async (dbName) => {
+		return Dexie.delete(dbName).then(() => {
 			console.log('Database deleted successfully!')
 		}).catch((error) => {
 			console.error('Error deleting database:', error)

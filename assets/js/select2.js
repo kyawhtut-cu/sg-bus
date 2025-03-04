@@ -4200,7 +4200,7 @@ S2.define('select2/dropdown/search',[
 	  '<span class="select2-search input-field">' +
 	  '<input class="select2-search__field" type="text" tabindex="-1"' +
 	  ' style="width: calc(100% - 2rem); margin: 0 1rem 0 1rem!important;"' +
-	  ` placeholder="${this.options.get('placeholder')}"` +
+	  ` placeholder="${this.options.get('search') ?? this.options.get('placeholder')}"` +
 	  ' autocorrect="off" autocapitalize="none"' +
 	  ' spellcheck="false" role="searchbox" aria-autocomplete="list" />' +
 	  '</span>'

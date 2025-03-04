@@ -20,19 +20,14 @@
 		const columnCountSelect = $('<select>', {
 			id: 'columnCount'
 		})
-		columnCountSelect.append(`<option value="" disabled selected>Choose columns</option>`)
-		const columnCount = Repo.getColumnCount()
-		for (let i = 1; i < 13; i++) {
-			const option = new Option(i, i)
-			if(i == columnCount) $(option).prop('selected', true)
-			columnCountSelect.append(option)
-		}
 		const columnCountDiv = $('<div>', {
 			class: 'input-field col-md-5 col-sm-12 mb-0'
 		})
 		columnCountDiv.append(columnCountSelect)
 		columnCountDiv.append(
-			$('<label>').text('Choose number of columns')
+			$('<label>', {
+				class: 'active'
+			}).text('Choose number of columns')
 		)
 
 		const headerDiv = $('<div>', {
@@ -101,7 +96,20 @@
 
 		$('body').append(dialogDiv)
 
-		columnCountSelect.formSelect()
+		let columnList = []
+		const columnCount = Repo.getColumnCount()
+		for (let i = 1; i < 13; i++) {
+			columnList.push({
+				id: i,
+				text: i,
+				selected: i == columnCount
+			})
+		}
+		columnCountSelect.select2({
+			placeholder: 'Select colunm count',
+			search: 'Search column',
+			data: columnList
+		})
 
 		dialogDiv.modal({
 			opacity: 0.2,
@@ -220,6 +228,7 @@
 
 		$(`#busStopName${busService.index}`).select2({
 			placeholder: 'Select Bus Stop',
+			search: 'Search Bus Stop',
 			data: data,
 			dropdownAutoWidth: false,
 			templateSelection: (selection) => {
@@ -241,19 +250,14 @@
 		})
 		busStopNameInput.on('select2:select', function (e) {
 			const data = e.params.data
-			if (busService.bus_stop_name != data.id) {
+			if (busService.bus_stop_code != data.id) {
 				busService = _.set(busService, 'bus_service_no', '')
 			}
 			busService = _.set(busService, 'bus_stop_name', data.bus_stop_name)
 			busService = _.set(
 				busService,
 				'bus_stop_code',
-				_.find(
-					busStopList, 
-					{
-						bus_stop_name : busService.bus_stop_name
-					}
-				)?.bus_stop_code
+				data.id
 			)
 			onDataUpdateByIndex(
 				busService.index,
@@ -320,11 +324,12 @@
 	}
 
 	function setBusServiceNoList(busService) {
+		$(`#busServiceNo${busService.index}`).empty()
 		var data = []
 		_.find(
 			busStopList,
 			{
-				bus_stop_name: busService.bus_stop_name
+				bus_stop_code: busService.bus_stop_code
 			}
 		)?.bus_service_no_list?.forEach ( serviceNo => {
 			data.push({
@@ -333,9 +338,9 @@
 				selected: busService.bus_service_no == serviceNo
 			})
 		})
-		$(`#busServiceNo${busService.index}`).empty()
 		$(`#busServiceNo${busService.index}`).select2({
-			placeholder: 'Select Bus Service No',
+			placeholder: 'Select Bus Service No.',
+			search: 'Search Bus Service No.',
 			data: data
 		})
 

@@ -2,7 +2,9 @@
 	"use strict"
 
 	let Repo = null
+	let BusDetail = null
 	let timeoutId = null
+	let nextBusList = []
 
 	let gridDiv = null
 
@@ -35,7 +37,8 @@
 	async function showHome() {
 		if ($('#update')) $('#update').remove()
 		gridDiv = $('<div>', {
-			class: 'row h-100'
+			class: 'row h-100',
+			style: 'padding-bottom: .5rem;'
 		})
 		$('body').append(
 			$('<div>', {
@@ -68,7 +71,7 @@
 				return {
 					bus_service_no: savedBus.bus_service_no,
 					bus_stop_code: savedBus.bus_stop_code,
-					bus_stop_name: _.first(await Repo.getBusStopByStopCode(savedBus.bus_stop_code))?.bus_stop_name ?? ''
+					bus_stop_name: (await Repo.getBusStopByStopCode(savedBus.bus_stop_code))?.bus_stop_name ?? ''
 				}
 			})
 		)
@@ -92,7 +95,7 @@
 	function getLiveBus(savedBus, largeColumnCount) {
 		const col = $(`<div>`, {
 			class: 'column',
-			style: 'padding-top: .25rem'
+			style: 'padding: 0 .5rem;'
 		})
 		if (largeColumnCount == 12) {
 			col.addClass('col-12')
@@ -101,7 +104,8 @@
 		}
 
 		const headerDiv = $('<div>', {
-			class: 'w-100 bg-light d-flex header'
+			class: 'w-100 bg-light d-flex header',
+			style: 'margin-top: .5rem;'
 		})
 		headerDiv.append(
 			$('<div>', {
@@ -110,15 +114,28 @@
 		)
 		headerDiv.append(
 			$('<div>', {
-				class: 'h-100 red-text d-flex justify-content-center align-items-center fw-bold busStopName'
+				class: 'h-100 red-text d-flex align-items-center fw-bold busStopName flex-grow-1'
 			}).text(savedBus.bus_stop_name)
+		)
+		headerDiv.append(
+			$('<i>', {
+				class: 'material-icons align-self-center btn-flat waves-effect d-flex align-items-center'
+			}).text('info_outline').on('click', async function() {
+				BusDetail = $.BusDetail(Repo)
+				await BusDetail.open(
+					savedBus.bus_service_no,
+					savedBus.bus_stop_code,
+					nextBusList[`${savedBus.bus_service_no}-${savedBus.bus_stop_code}`]
+				)
+				BusDetail = null
+			})
 		)
 		col.append(headerDiv)
 
 		const liveDiv = $('<div>', {
 			id: `busLive${savedBus.bus_service_no}${savedBus.bus_stop_code}`,
-			class: ` d-flex justify-content-center align-items-center`,
-			style: 'height: calc(100% - 56px);',
+			class: `d-flex justify-content-center align-items-center`,
+			style: 'height: calc(100% - 56px - .5rem);',
 		})
 		liveDiv.append(getCardLoading())
 		col.append(liveDiv)
@@ -128,54 +145,52 @@
 
 	function getCardLoading() {
 		return `
-			<div style="height: calc(100% - 56px); display: flex; align-items: center; justify-content: center">
-				<div class="preloader-wrapper medium active">
-					<div class="spinner-layer spinner-blue">
-						<div class="circle-clipper left">
-							<div class="circle"></div>
-						</div>
-						<div class="gap-patch">
-							<div class="circle"></div>
-						</div>
-						<div class="circle-clipper right">
-							<div class="circle"></div>
-						</div>
+			<div class="preloader-wrapper medium active">
+				<div class="spinner-layer spinner-blue">
+					<div class="circle-clipper left">
+						<div class="circle"></div>
 					</div>
-
-					<div class="spinner-layer spinner-red">
-						<div class="circle-clipper left">
-							<div class="circle"></div>
-						</div>
-						<div class="gap-patch">
-							<div class="circle"></div>
-						</div>
-						<div class="circle-clipper right">
-							<div class="circle"></div>
-						</div>
+					<div class="gap-patch">
+						<div class="circle"></div>
 					</div>
-
-					<div class="spinner-layer spinner-yellow">
-						<div class="circle-clipper left">
-							<div class="circle"></div>
-						</div>
-						<div class="gap-patch">
-							<div class="circle"></div>
-						</div>
-						<div class="circle-clipper right">
-							<div class="circle"></div>
-						</div>
+					<div class="circle-clipper right">
+						<div class="circle"></div>
 					</div>
+				</div>
 
-					<div class="spinner-layer spinner-green">
-						<div class="circle-clipper left">
-							<div class="circle"></div>
-						</div>
-						<div class="gap-patch">
-							<div class="circle"></div>
-						</div>
-						<div class="circle-clipper right">
-							<div class="circle"></div>
-						</div>
+				<div class="spinner-layer spinner-red">
+					<div class="circle-clipper left">
+						<div class="circle"></div>
+					</div>
+					<div class="gap-patch">
+						<div class="circle"></div>
+					</div>
+					<div class="circle-clipper right">
+						<div class="circle"></div>
+					</div>
+				</div>
+
+				<div class="spinner-layer spinner-yellow">
+					<div class="circle-clipper left">
+						<div class="circle"></div>
+					</div>
+					<div class="gap-patch">
+						<div class="circle"></div>
+					</div>
+					<div class="circle-clipper right">
+						<div class="circle"></div>
+					</div>
+				</div>
+
+				<div class="spinner-layer spinner-green">
+					<div class="circle-clipper left">
+						<div class="circle"></div>
+					</div>
+					<div class="gap-patch">
+						<div class="circle"></div>
+					</div>
+					<div class="circle-clipper right">
+						<div class="circle"></div>
 					</div>
 				</div>
 			</div>
@@ -186,8 +201,15 @@
 		if(timeoutId) clearTimeout(timeoutId)
 
 		const busArrivalList = await Repo.onFetchBusArrival(savedBusList)
+		nextBusList = []
 
 		busArrivalList.forEach( service => {
+			const key = `${service.bus_service_no}-${service.bus_stop_code}`
+			nextBusList[key] = _.first(service.bus_service_list)
+			if (BusDetail?.getKey() == key) {
+				BusDetail?.setLiveBusTiming(_.first(service.bus_service_list))
+			}
+
 			const busLiveDiv = $(`#busLive${service.bus_service_no}${service.bus_stop_code}`)
 			busLiveDiv.empty()
 			busLiveDiv.append(
@@ -205,8 +227,7 @@
 
 	function getBusArrival(busServiceList, rowCount) {
 		const row = $('<div>', {
-			class: 'row w-100 h-100',
-			style: 'margin-bottom: .25rem;'
+			class: 'row w-100 h-100 m-0 g-2'
 		})
 		if (!busServiceList || busServiceList.NextBus.EstimatedArrival == '') {
 			row.append(
@@ -227,8 +248,7 @@
 		// Col 1
 		row.append(
 			$('<div>', {
-				class: `col-lg-${isHasBusTwo ? 6 : 12} col-md-12 col-sm-12 ${isHasBusTwo ? `` : `d-flex justify-content-center`}`,
-				style: `padding: .5rem .5rem 0 0;`
+				class: `col-lg-${isHasBusTwo ? 6 : 12} col-md-12 col-sm-12 ${isHasBusTwo ? `` : `d-flex justify-content-center`}`
 			}).append(
 				getNextBusCard(!isHasBusTwo, busServiceList.NextBus, rowCount)
 			)
@@ -238,8 +258,7 @@
 			// Col 2
 			row.append(
 				$('<div>', {
-					class: 'col-lg-6 col-md-12 col-sm-12',
-					style: `padding: .5rem .5rem 0 0;`
+					class: 'col-lg-6 col-md-12 col-sm-12'
 				}).append(
 					getNextBusCard(false, busServiceList.NextBus2, rowCount)
 				)
@@ -250,8 +269,7 @@
 			// Col 3
 			row.append(
 				$('<div>', {
-					class: 'col-12 d-flex justify-content-center',
-					style: `padding: .5rem .5rem 0 0;`
+					class: 'col-12 d-flex justify-content-center'
 				}).append(
 					getNextBusCard(true, busServiceList.NextBus3, rowCount)
 				)
@@ -263,7 +281,7 @@
 	}
 
 	function getNextBusCard(isOnlyOne, nextBus, row) {
-		const min = convertArrivalMin(nextBus.EstimatedArrival)
+		const min = $.convertArrivalMin(nextBus.EstimatedArrival)
 		const div = $('<div>', {
 			class: `w-100 h-100 black ${nextBus.Load == 'SEA' ? `green-text text-accent-4` : nextBus.Load == 'SDA' ? `amber-text` : `red-text`} fw-bold d-flex justify-content-center align-items-center position-relative`,
 			style: `font-size: calc(100vh / ${row * (min == 'Left' || min == 'Arr' ? 4.5 : 3)}); border-radius: 8px; line-height: 0;`
@@ -284,40 +302,5 @@
 			}).text('accessible'))
 		}
 		return div
-	}
-
-	async function onFetchLiveBus(savedBusList) {
-		let result = await Promise.all(
-			savedBusList.map( savedBus => {
-				return Repo.onFetchBusArrival(
-					savedBus.bus_service_no,
-					savedBus.bus_stop_code
-				)
-			})
-		)
-		return result.filter( service => service != null)
-	}
-
-	function convertArrivalMin(value) {
-		if (!value || value === "") {
-			return "No More Next Bus"
-		}
-
-		const arrival = new Date(value)
-
-		const now = new Date()
-
-		const sec = Math.floor((arrival - now) / 1000)
-		let min = Math.floor(sec / 60)
-
-		if (min == -2) {
-			return "Left"
-		}
-
-		if (min <= 1 && min >= -1) {
-			return "Arr"
-		}
-
-		return min.toString()
 	}
 }(jQuery))

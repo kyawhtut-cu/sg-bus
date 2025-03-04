@@ -44,7 +44,7 @@
 
 	const onFetchBusStopList = async (index = 0, oldList = []) => {
 		try {
-			const response = await Api.get(`BusStops?$skip=${index * 2000}`)
+			const response = await Api.get(`BusStops?$skip=${index * 500}`)
 			
 			if (!_.isEmpty(response.value)) {
 				return await onFetchBusStopList(index + 1, oldList.concat(response.value))

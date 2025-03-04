@@ -16,18 +16,18 @@
 
 	Api.prototype.get = async function (path) {
 
-		if (ajax != null && ajax[path] != null) {
-			ajax[path].abort()
-		}
+		// if (ajax != null && ajax[path] != null) {
+		// 	ajax[path].abort()
+		// }
 
 		return await fetchData(`get`, path)
 	}
 
 	Api.prototype.post = async function ({path, method = `post`, jsonData}) {
 
-		if (ajax != null && ajax[path] != null) {
-			ajax[path].abort()
-		}
+		// if (ajax != null && ajax[path] != null) {
+		// 	ajax[path].abort()
+		// }
 
 		return await fetchData(method, path, jsonData)
 	}
@@ -88,7 +88,8 @@
 				option["contentType"] = `application/json; charset=utf-8`
 			}
 
-			ajax[path] = $.ajax(option)
+			//ajax[path] = 
+			$.ajax(option)
 		})
 	}
 }(jQuery))

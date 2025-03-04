@@ -2,24 +2,35 @@
 
 	let ApiService = null
 	let Db = null
+	const VERSION = 1
 
 	jQuery.Repo = function (db, apiService) {
 		ApiService = apiService
 		Db = db
 
-		// localStorage.removeItem('lastUpdatedTime')
-		// localStorage.removeItem('lastInsertedTime')
-
 		return {
+			init,
 			onUpdateData,
 			isNeedToDataUpdate,
 			getBusStopList,
 			getSavedBusList,
 			getBusStopByStopCode,
+			getBusServiceByServiceNo,
 			onInsertLiveBusServiceList,
 			getColumnCount,
 			setColumnCount,
 			onFetchBusArrival
+		}
+	}
+
+	async function init() {
+		const currentVersion = localStorage.getItem("version")
+		if (VERSION != currentVersion) {
+			await Db.onDropDb($.SG_BUS_DB)
+			// await Db.onDropDb($.SG_BUS_RESPONSE_DB)
+			// localStorage.removeItem('lastUpdatedTime')
+			localStorage.removeItem('lastInsertedTime')
+			localStorage.setItem("version", VERSION)
 		}
 	}
 
@@ -32,7 +43,7 @@
 	}
 
 	function isNeedToDataUpdate() {
-		return needsToUpdate('lastUpdatedTime') || needsToUpdate('lastUpdatedTime')
+		return needsToUpdate('lastUpdatedTime') || needsToUpdate('lastInsertedTime')
 	}
 
 	async function getBusStopList() {
@@ -47,13 +58,17 @@
 		return Db.getBusStopByStopCode(stopCode)
 	}
 
+	async function getBusServiceByServiceNo(serviceNo) {
+		return Db.getBusServiceByServiceNo(serviceNo)
+	}
+
 	async function onInsertLiveBusServiceList(list) {
 		await Db.onClearLiveBusService()
 		await Db.onInsertLiveBusServiceList(list)
 	}
 
 	function getColumnCount() {
-		return localStorage.getItem('column_count')
+		return localStorage.getItem('column_count') ?? 1
 	}
 
 	function setColumnCount(value) {
@@ -139,7 +154,14 @@
 						return {
 							bus_stop_code: route.BusStopCode,
 							distance: route.Distance,
-							direction: route.Direction
+							direction: route.Direction,
+							sat_first_bus: route.SAT_FirstBus,
+							sat_last_bus: route.SAT_LastBus,
+							sun_first_bus: route.SUN_FirstBus,
+							sun_last_bus: route.SUN_LastBus,
+							wd_first_bus: route.WD_FirstBus,
+							wd_last_bus: route.WD_LastBus,
+							sequence: route.StopSequence
 						}
 					})
 				), 'Direction')
@@ -154,9 +176,14 @@
 					'bus_stop_code': busStop.BusStopCode,
 					'bus_stop_name': busStop.Description,
 					'road_name': busStop.RoadName,
-					'bus_service_no_list': responseBusRouteList.filter( route => {
-						return route.BusStopCode == busStop.BusStopCode
-					}).map( route => route.ServiceNo ),
+					'bus_service_no_list': _.uniq(
+						responseBusRouteList.filter( route => {
+							if (busStop.BusStopCode == "46009" && route.BusStopCode == busStop.BusStopCode) {
+								console.log(route)
+							}
+							return route.BusStopCode == busStop.BusStopCode
+						}).map( route => route.ServiceNo )
+					),
 					'latitude': busStop.Latitude,
 					'longitude': busStop.Longitude
 				}

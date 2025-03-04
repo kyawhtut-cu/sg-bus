@@ -93,14 +93,22 @@
 	<script src="assets/js/db.js"></script>
 	<script src="assets/js/repo.js"></script>
 	<script src="assets/js/home.js"></script>
+	<script src="assets/js/bus-detail.js"></script>
+	<script src="assets/js/utils.js"></script>
 	<script src="assets/js/select2.js"></script>
 	<script>
 		$(document).ready(async function () {
+
+			preventScreenSaver()
 
 			const Db = $.Db()
 			const ApiService = $.ApiService()
 			const Repo = $.Repo(Db, ApiService)
 			const Home = $.Home(Repo)
+
+			await Repo.init()
+
+			console.log(Repo.isNeedToDataUpdate())
 
 			await Db.initData()
 			if (Repo.isNeedToDataUpdate()) {
@@ -114,11 +122,9 @@
 					await navigator.wakeLock.request('screen')
 					console.log('Screen wake lock is active')
 				} catch (err) {
-					consoel.error('Wake lock failed:', err)
+					console.error('Wake lock failed:', err)
 				}
 			}
-
-			preventScreenSaver()
 		});
 	</script>
 
