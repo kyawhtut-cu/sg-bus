@@ -29,63 +29,119 @@
 			$('<h4>').text(busService.bus_service_no)
 		)
 
+		const busDirectionTab = $('<ul>', {
+			class: 'tabs z-depth-1'
+		})
+		let busDirectionContentList = []
+		busService.bus_direction_list.forEach( direction => {
+			const directionTab = $('<li>', {
+				class: 'tab col s3'
+			}).append(
+				`<a href="#tab${direction}" ${direction == 1 ? 'class="active"' : ''}>Direction ${direction}</a>`
+			)
+			busDirectionTab.append(directionTab)
+
+			const busRouteListDiv = $('<div>', {
+				class: 'w-75 position-relative',
+				style: 'left: 50%; right: 50%; transform: translate(-50%, -50%);'
+			})
+			const busRouteList = _.filter(busService.bus_route_list, { direction : direction })
+			busRouteList.forEach( async (route, index) => {
+				const isRight = index % 2 === 0
+				const isLast = index + 1 >= busRouteList.length
+
+				const routeBusStop = await Repo.getBusStopByStopCode(route.bus_stop_code)
+				const routeInfoDiv = $('<div>', {
+					class: 'card-panel position-absolute d-flex',
+					style: `
+						width: calc(50% - 15px);
+						min-height: 70px;
+						max-height: ${70 * (index + 2) - 8}px;
+						overflow: auto;
+						${isRight ? '' : 'left: 0;'}
+						${isRight ? 'right: 0;' : ''}
+						top: ${70 * index + 10}px;
+					`
+				})
+				routeInfoDiv.append(routeBusStop.bus_stop_name)
+
+				const line = $('<div>', {
+					class: `position-absolute red`,
+					style: `
+						width: 2px;
+						height: ${isLast ? '14px' : '70px'};
+						top: ${70 * index + (index == 0 ? 8 : 0) + 10}px;
+						left: 50%;
+						transform: translate(-50%);
+					`
+				})
+
+				const bullet = $('<span>', {
+					class: 'position-absolute red',
+					style: `
+						width: 10px;
+						height: 10px;
+						border-radius: 50%;
+						left: 50%;
+						top: ${70 * index + 23}px;
+						transform: translate(-50%);
+					`
+				})
+
+				busRouteListDiv.append(routeInfoDiv)
+				busRouteListDiv.append(line)
+				busRouteListDiv.append(bullet)
+				busRouteListDiv.append(
+					$('<div>', {
+						style: `
+							${isRight ? 'right' : 'left'}: calc(50% - 16px);
+							content: " ";
+							position: absolute;
+							top: ${70 * index + 20}px;
+							z-index: 1;
+							border: medium solid white;
+							border-width: ${isRight ? '7px 7px 7px 0' : '7px 0 7px 7px'};
+							border-color: transparent ${isRight ? 'white' : 'transparent'} transparent ${isRight ? 'transparent' : 'white'};
+						`
+					})
+				)
+			})
+			busRouteListDiv.append(
+				$('<div>', {
+					class: 'position-absolute',
+					style: `
+						min-height: 16px;
+						top: ${70 * busRouteList.length + 10}px;
+						opacity: 0;
+					`
+				}).append('empty')
+			)
+
+			busDirectionContentList.push(
+				$('<div>', {
+					id: `tab${direction}`,
+					class: 'w-100 justify-content-center',
+					style: 'height: calc(100% - 56px); overflow-y: auto;'
+				}).append(busRouteListDiv)
+			)
+		})
+
+		const busRouteDiv = $('<div>', {
+			style: 'height: calc(100% - 116px);'
+		})
+		busRouteDiv.append(busDirectionTab)
+		busDirectionContentList.forEach( div => {
+			busRouteDiv.append(div)
+		})
+
 		const busServiceDiv = $('<div>', {
 			id: 'busService',
 			class: 'row g-1 m-0',
 			style: 'min-height: 120px;'
 		})
-
-		const busRouteDiv = $('<div>', {
-			class: 'row m-0 pb-2',
-			style: 'height: calc(100% - 124px); overflow-y: auto;'
-		})
-		busService.bus_direction_list.forEach( direction => {
-			const directionTitleDiv = $('<div>', {
-				class: 'd-flex align-items-center'
-			}).text(`Direction - ${direction}`)
-
-			const busRouteList = _.filter(busService.bus_route_list, { direction : direction })
-			const busRouteListDiv = $('<div>', {
-			})
-			busRouteList.forEach( (route, index) => {
-				const routeInfoDiv = $('<div>', {
-					class: 'd-flex align-items-center'
-				})
-				routeInfoDiv.append(
-					$('<span>', {
-						class: 'red',
-						style: 'width: 8px; height: 8px; border-radius: 50%; margin-right: 5px;'
-					})
-				)
-				routeInfoDiv.append(route.bus_stop_code)
-
-				const isLast = index + 1 >= busRouteList.length
-				const line = $('<div>', {
-					class: `${isLast ? `` : `h-100`} position-absolute red`,
-					style: `top: ${index != 0 ? 0 : `8px`}; left: 3px; width: 2px; ${isLast ? `height: 8px;` : ``}`
-				})
-
-				const routeDiv = $('<div>', {
-					class: 'position-relative yellow',
-					style: 'min-height: 70px; width: 120px;'
-				})
-				routeDiv.append(routeInfoDiv)
-				routeDiv.append(line)
-
-				busRouteListDiv.append(routeDiv)
-			})
-
-			const directionDiv = $('<div>', {
-				class: `col-${12 / busService.bus_direction_list.length}`
-			})
-			directionDiv.append(directionTitleDiv)
-			directionDiv.append(busRouteListDiv)
-
-			busRouteDiv.append(directionDiv)
-		})
 		
 		const busDetailDiv = $('<div>', {
-			style: 'flex-grow: 1; overflow-y: auto;'
+			style: 'flex-grow: 1;'
 		})
 		busDetailDiv.append(busServiceDiv)
 		busDetailDiv.append(busRouteDiv)
@@ -121,6 +177,13 @@
 
 		$('body').append(dialogDiv)
 
+		$('.tabs').tabs()
+		setTimeout(() => {
+			$('.tabs').tabs('updateTabIndicator')
+		}, 500)
+
+		setLiveBusTiming(nextBusList)
+
 		return new Promise((resolve, reject) => {
 			dialogDiv.modal({
 				opacity: 0.2,
@@ -139,7 +202,6 @@
 			})
 
 			dialogDiv.modal('open')
-			setLiveBusTiming(nextBusList)
 		})
 	}
 
