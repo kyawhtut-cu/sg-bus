@@ -27,8 +27,8 @@
 		const currentVersion = localStorage.getItem("version")
 		if (VERSION != currentVersion) {
 			await Db.onDropDb($.SG_BUS_DB)
-			// await Db.onDropDb($.SG_BUS_RESPONSE_DB)
-			// localStorage.removeItem('lastUpdatedTime')
+			await Db.onDropDb($.SG_BUS_RESPONSE_DB)
+			localStorage.removeItem('lastUpdatedTime')
 			localStorage.removeItem('lastInsertedTime')
 			localStorage.setItem("version", VERSION)
 		}
@@ -178,9 +178,6 @@
 					'road_name': busStop.RoadName,
 					'bus_service_no_list': _.uniq(
 						responseBusRouteList.filter( route => {
-							if (busStop.BusStopCode == "46009" && route.BusStopCode == busStop.BusStopCode) {
-								console.log(route)
-							}
 							return route.BusStopCode == busStop.BusStopCode
 						}).map( route => route.ServiceNo )
 					),

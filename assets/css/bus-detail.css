@@ -1,0 +1,59 @@
+.bus-stop-line {
+	width: 4px;
+	height: 70px;
+	left: 50%;
+	transform: translate(-50%);
+	background: blue;
+}
+
+.bus-stop-line.isLast {
+	height: 14px;
+}
+
+.bus-stop-point {
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: white;
+	border-radius: 50%;
+	background-color: #ff4343;
+	left: 50%;
+	transform: translate(-50%);
+	cursor: pointer;
+}
+
+.bus-stop-point i {
+	font-size: 18px!important;
+}
+
+.bus-stop-point-ripple:before,
+.bus-stop-point-ripple:after {
+	content: '';
+	display: block;
+	position: absolute;
+	top: 0; 
+	right: 0; 
+	bottom: 0; 
+	left: 0;
+	background-color: #ff4343;
+	border-radius: 50%;
+}
+
+
+.bus-stop-point-ripple:before {
+  animation: ripple 2s linear infinite;
+}
+
+.bus-stop-point-ripple:after {
+  animation: ripple 2s linear 1s infinite;
+}
+
+@keyframes ripple{
+  0% { transform: scale(1.2); opacity: .5}
+  25% { transform: scale(1.4); opacity: .4}
+  50% { transform: scale(1.6); opacity:.3; }
+  75% { transform: scale(1.8); opacity:.2; }
+  100% { transform: scale(2); opacity: 0; }
+}

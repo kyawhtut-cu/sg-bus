@@ -34,7 +34,9 @@
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<!-- <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"> -->
+	<link rel="stylesheet" type="text/css" href="./assets/css/bus-detail.css">
 	<link rel="stylesheet" type="text/css" href="./assets/css/select2.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/jquery.webui-popover/1.2.1/jquery.webui-popover.min.css">
 
 	<style>
 
@@ -58,6 +60,8 @@
 		.header .busStopName {
 			margin-left: 10px;
 			font-size: 36px;
+			white-space: nowrap;
+			text-overflow: ellipsis;
 		}
 
 		.setting-dialog {
@@ -79,9 +83,7 @@
 
 	<!-- Scripts -->
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-	<script 
-		src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
-		crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/jquery.webui-popover/1.2.1/jquery.webui-popover.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.5.9/lottie.js"></script>
@@ -116,6 +118,8 @@
 				await Repo.onUpdateData()
 			}
 			Home.showHome()
+
+			// $('a').webuiPopover();
 
 			async function preventScreenSaver() {
 				try {

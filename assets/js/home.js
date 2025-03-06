@@ -221,7 +221,7 @@
 		})
 
 		timeoutId = setTimeout(() => {
-			onListenLiveBus(savedBusList, row)
+			// onListenLiveBus(savedBusList, row)
 		}, 1000 * 10)
 	}
 
@@ -248,7 +248,7 @@
 		// Col 1
 		row.append(
 			$('<div>', {
-				class: `col-lg-${isHasBusTwo ? 6 : 12} col-md-12 col-sm-12 ${isHasBusTwo ? `` : `d-flex justify-content-center`}`
+				class: `col-${isHasBusTwo ? 6 : 12} ${isHasBusTwo ? `` : `d-flex justify-content-center`}`
 			}).append(
 				getNextBusCard(!isHasBusTwo, busServiceList.NextBus, rowCount)
 			)
@@ -258,7 +258,7 @@
 			// Col 2
 			row.append(
 				$('<div>', {
-					class: 'col-lg-6 col-md-12 col-sm-12'
+					class: 'col-6'
 				}).append(
 					getNextBusCard(false, busServiceList.NextBus2, rowCount)
 				)

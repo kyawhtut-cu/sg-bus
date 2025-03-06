@@ -42,8 +42,7 @@
 			busDirectionTab.append(directionTab)
 
 			const busRouteListDiv = $('<div>', {
-				class: 'w-75 position-relative',
-				style: 'left: 50%; right: 50%; transform: translate(-50%, -50%);'
+				class: 'w-100 position-relative'
 			})
 			const busRouteList = _.filter(busService.bus_route_list, { direction : direction })
 			busRouteList.forEach( async (route, index) => {
@@ -52,59 +51,42 @@
 
 				const routeBusStop = await Repo.getBusStopByStopCode(route.bus_stop_code)
 				const routeInfoDiv = $('<div>', {
-					class: 'card-panel position-absolute d-flex',
+					class: `position-absolute d-flex fw-bold ${isRight ? '' : 'justify-content-end'}`,
 					style: `
-						width: calc(50% - 15px);
+						width: calc(50% - 33px);
 						min-height: 70px;
 						max-height: ${70 * (index + 2) - 8}px;
 						overflow: auto;
-						${isRight ? '' : 'left: 0;'}
-						${isRight ? 'right: 0;' : ''}
-						top: ${70 * index + 10}px;
+						${isRight ? '' : 'left: 8px;'}
+						${isRight ? 'right: 8px;' : ''}
+						top: ${70 * index + 24}px;
+						font-size: 18px;
+						line-height: 1;
 					`
 				})
 				routeInfoDiv.append(routeBusStop.bus_stop_name)
+				routeInfoDiv.appendTo(busRouteListDiv)
 
-				const line = $('<div>', {
-					class: `position-absolute red`,
+				$('<div>', {
+					class: `position-absolute bus-stop-line ${isLast ? 'isLast' : ''}`,
 					style: `
-						width: 2px;
-						height: ${isLast ? '14px' : '70px'};
 						top: ${70 * index + (index == 0 ? 8 : 0) + 10}px;
-						left: 50%;
-						transform: translate(-50%);
 					`
-				})
+				}).appendTo(busRouteListDiv)
 
-				const bullet = $('<span>', {
-					class: 'position-absolute red',
+				$('<span>', {
+					class: 'position-absolute bus-stop-point bus-stop-point-ripple',
 					style: `
-						width: 10px;
-						height: 10px;
-						border-radius: 50%;
-						left: 50%;
 						top: ${70 * index + 23}px;
-						transform: translate(-50%);
 					`
-				})
-
-				busRouteListDiv.append(routeInfoDiv)
-				busRouteListDiv.append(line)
-				busRouteListDiv.append(bullet)
-				busRouteListDiv.append(
-					$('<div>', {
-						style: `
-							${isRight ? 'right' : 'left'}: calc(50% - 16px);
-							content: " ";
-							position: absolute;
-							top: ${70 * index + 20}px;
-							z-index: 1;
-							border: medium solid white;
-							border-width: ${isRight ? '7px 7px 7px 0' : '7px 0 7px 7px'};
-							border-color: transparent ${isRight ? 'white' : 'transparent'} transparent ${isRight ? 'transparent' : 'white'};
-						`
-					})
-				)
+				}).appendTo(busRouteListDiv)
+				$('<span>', {
+					class: 'position-absolute bus-stop-point',
+					style: `top: ${70 * index + 23}px;`,
+					'data-title': routeBusStop.bus_stop_name,
+					'data-content': `SAT First: ${route.sat_first_bus}<br>SAT Last: ${route.sat_last_bus}<br>SUN First: ${route.sun_first_bus}<br>SUN Last: ${route.sun_last_bus}<br>WD First: ${route.wd_first_bus}<br>WD Last: ${route.wd_last_bus}`,
+					'data-placement': "auto"
+				}).append('<i class="material-icons">location_on</i>').appendTo(busRouteListDiv)
 			})
 			busRouteListDiv.append(
 				$('<div>', {
@@ -169,13 +151,21 @@
 		footerDiv.append(btnDismiss)
 
 		const dialogDiv = $('<div>', {
-			class: 'modal modal-fixed-footer'
+			class: 'modal modal-fixed-footer',
+			style: 'height: 90%; max-height: unset!important; top: 0!important; bottom: 10%!important;'
 		})
 
 		dialogDiv.append(contentDiv)
 		dialogDiv.append(footerDiv)
+		contentDiv.append('<a href="#" data-title="Title" data-content="Contents..." data-placement="auto">show pop</a>')
 
 		$('body').append(dialogDiv)
+
+		setTimeout(() => {
+			$('span').webuiPopover({
+				trigger: 'hover'
+			})
+		}, 3000)
 
 		$('.tabs').tabs()
 		setTimeout(() => {
