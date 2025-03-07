@@ -15,7 +15,7 @@
 
 	const onFetchBusArrival = async (busServiceNo, busStopCode) => {
 		try {
-			const response = await Api.get(`BusArrivalv2?ServiceNo=${busServiceNo}&BusStopCode=${busStopCode}`)
+			const response = await Api.get(`v3/BusArrival?ServiceNo=${busServiceNo}&BusStopCode=${busStopCode}`)
 
 			return {
 				bus_service_no: busServiceNo,

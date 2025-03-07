@@ -77,18 +77,11 @@
 			class: 'waves-effect waves-light btn-flat d-flex justify-content-center align-items-center'
 		})
 		btnSave.text('Save')
-
-		const btnUpdate = $('<button>', {
-			id: 'btnUpdate',
-			class: 'waves-effect waves-light btn-flat d-flex justify-content-center align-items-center'
-		})
-		btnUpdate.text('Update Data')
 		
 		const footerDiv = $('<div>', {
 			class: 'modal-footer',
 			style: 'border-top: unset;'
 		})
-		footerDiv.append(btnUpdate)
 		footerDiv.append(btnAddNew)
 		footerDiv.append(btnCancel)
 		footerDiv.append(btnSave)
@@ -197,11 +190,6 @@
 				Repo.setColumnCount($('#columnCount').val())
 
 				result = 1
-				dialogDiv.modal('close')
-			})
-
-			$('#btnUpdate').on('click', () => {
-				result = -1
 				dialogDiv.modal('close')
 			})
 

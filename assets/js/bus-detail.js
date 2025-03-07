@@ -3,6 +3,7 @@
 	let Repo = null
 	let busServiceNo = null
 	let busStopCode = null
+	let busServiceRouteList = []
 
 	jQuery.BusDetail = function (repo) {
 		Repo = repo
@@ -72,7 +73,7 @@
 		busDirectionTab.appendTo(busRouteDiv)
 
 		let directionList = busService.bus_direction_list
-		let busServiceRouteList = busService.bus_route_list
+		busServiceRouteList = busService.bus_route_list
 		if (directionList.length == 1 && busService.bus_loop_stop_code != '') {
 			directionList = [1, 2]
 			const busLoopStopCodeIndex = _.findIndex(
@@ -239,6 +240,10 @@
 				outDuration: 200,
 				dismissible: true,
 				onCloseEnd: () => {
+					busServiceRouteList = []
+					Repo = null
+					busServiceNo = null
+					busStopCode = null
 					resolve()
 					setTimeout(() => {
 						dialogDiv.remove()

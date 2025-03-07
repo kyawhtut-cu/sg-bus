@@ -18,6 +18,8 @@
 
 	function showLoading() {
 		if ($('#home')) $('#home').remove()
+		if ($('#btnFab')) $('#btnFab').remove()
+
 		$('<div>', {
 			id: 'update',
 			class: 'vh-100'
@@ -46,17 +48,52 @@
 			}).appendTo($('body'))
 		)
 
-		const fab = $('<button>', {
-			id: 'btnSetting',
-			class: 'btn-floating btn-large waves-effect waves-light deep-orange position-fixed',
-			style: 'bottom: 16px; right: 16px;'
+		const fab = $('<div>', {
+			id: 'btnFab',
+			class: 'fixed-action-btn',
 		})
-		$('<i>', {
-			class: 'material-icons'
-		}).text('settings').appendTo(fab)
 		fab.appendTo($('body'))
 
-		fab.on('click', async function() {
+		$('<i>', {
+			class: 'material-icons large'
+		}).text('menu').appendTo(
+			$('<a>', {
+				class: 'btn-floating btn-large red waves-effect'
+			}).appendTo(fab)
+		)
+
+		const subFab = $('<ul>')
+		subFab.appendTo(fab)
+
+		const updateDataBtn = $('<li>')
+		updateDataBtn.appendTo(subFab)
+
+		$('<i>', {
+			class: 'material-icons'
+		}).text('update').appendTo(
+			$('<a>', {
+				class: 'btn-floating red waves-effect'
+			}).appendTo(updateDataBtn)
+		)
+
+		updateDataBtn.on('click', async function() {
+			showLoading()
+			await Repo.onUpdateData(true)
+			showHome()
+		})
+
+		const settingButton = $('<li>')
+		settingButton.appendTo(subFab)
+
+		$('<i>', {
+			class: 'material-icons'
+		}).text('settings').appendTo(
+			$('<a>', {
+				class: 'btn-floating red waves-effect'
+			}).appendTo(settingButton)
+		)
+
+		settingButton.on('click', async function() {
 			const result = await $.Setting(Repo).open()
 			if (result == 1) {
 				onReloadLiveService()
@@ -66,6 +103,8 @@
 				showHome()
 			}
 		})
+
+		fab.floatingActionButton()
 
 		await onReloadLiveService()
 	}
@@ -138,8 +177,14 @@
 			style: 'margin-top: .5rem;'
 		})
 		headerDiv.appendTo(colDiv)
+
+		const popOver = $('<div>', {
+			class: 'position-absolute',
+			style: 'width: 93%; height: 56px;'
+		})
+		popOver.appendTo(headerDiv)
 		setPopover(
-			headerDiv,
+			popOver,
 			`${savedBus.bus_service_no} - ${savedBus.bus_stop_name} (${savedBus.bus_stop_code})`,
 			savedBus.bus_operation
 		)
@@ -178,61 +223,35 @@
 		})
 		liveDiv.appendTo(colDiv)
 
-		liveDiv.append(getCardLoading())
+		getCardLoading().appendTo(liveDiv)
 	}
 
 	function getCardLoading() {
-		return `
-			<div class="preloader-wrapper medium active">
-				<div class="spinner-layer spinner-blue">
-					<div class="circle-clipper left">
-						<div class="circle"></div>
-					</div>
-					<div class="gap-patch">
-						<div class="circle"></div>
-					</div>
-					<div class="circle-clipper right">
-						<div class="circle"></div>
-					</div>
-				</div>
+		const preloader = $('<div>', {
+			class: 'preloader-wrapper medium active'
+		})
 
-				<div class="spinner-layer spinner-red">
-					<div class="circle-clipper left">
-						<div class="circle"></div>
-					</div>
-					<div class="gap-patch">
-						<div class="circle"></div>
-					</div>
-					<div class="circle-clipper right">
-						<div class="circle"></div>
-					</div>
-				</div>
 
-				<div class="spinner-layer spinner-yellow">
-					<div class="circle-clipper left">
-						<div class="circle"></div>
-					</div>
-					<div class="gap-patch">
-						<div class="circle"></div>
-					</div>
-					<div class="circle-clipper right">
-						<div class="circle"></div>
-					</div>
-				</div>
+		const spinnerClassList = ['spinner-blue', 'spinner-red', 'spinner-yellow', 'spinner-green']
+		const circleClassList = ['circle-clipper left', 'gap-patch', 'circle-clipper right']
+		spinnerClassList.forEach( spinnerClass => {
+			const spinner = $('<div>', {
+				class: `spinner-layer ${spinnerClass}`
+			})
+			spinner.appendTo(preloader)
 
-				<div class="spinner-layer spinner-green">
-					<div class="circle-clipper left">
-						<div class="circle"></div>
-					</div>
-					<div class="gap-patch">
-						<div class="circle"></div>
-					</div>
-					<div class="circle-clipper right">
-						<div class="circle"></div>
-					</div>
-				</div>
-			</div>
-		`
+			circleClassList.forEach( circleClass => {
+				$('<div>', {
+					class: 'circle'
+				}).appendTo(
+					$('<div>', {
+						class: circleClass
+					}).appendTo(spinner)
+				)
+			})
+		})
+
+		return preloader
 	}
 
 	async function onListenLiveBus(savedBusList, row) {
@@ -265,7 +284,7 @@
 
 		timeoutId = setTimeout(() => {
 			onListenLiveBus(savedBusList, row)
-		}, 1000 * 10)
+		}, 1000 * 20)
 	}
 
 	function getBusArrival(row, busServiceList, rowCount) {
@@ -357,7 +376,7 @@
 						class: 'd-flex justify-content-center align-items-center grey-text text-lighten-1 fw-bold',
 						style: 'height: 120px; font-size: 24px;'
 					})
-					html.append(`Not in operation.`)
+					html.text(`Not in operation.`)
 				} else {
 					const table = $('<table>', {
 						class: 'striped centered'
@@ -398,7 +417,7 @@
 			},
 			trigger: `hover`,
 			animation: 'pop',
-			placement: 'auto',
+			placement: 'vertical',
 			padding: false,
 			onShow: (e) => {
 			},

@@ -6,6 +6,7 @@
 
 	const db = new Dexie(jQuery.SG_BUS_DB)
 	const responseDb = new Dexie(jQuery.SG_BUS_RESPONSE_DB)
+	const saveDb = new Dexie('save_bus')
 
 	jQuery.Db = function () {
 		return new Db()
@@ -49,16 +50,23 @@
 		db.version(1).stores(
 			{
 				bus_stop_table: 'bus_stop_code, bus_stop_name, road_name, bus_service_no_list, latitude, longitude',
-				bus_service_table: 'bus_service_no, bus_operator, bus_category, bus_route_list, bus_direction_list, bus_way_point, bus_loop_stop_code',
+				bus_service_table: 'bus_service_no, bus_operator, bus_category, bus_route_list, bus_direction_list, bus_way_point, bus_loop_stop_code'
+			}
+		)
+
+		saveDb.version(1).stores(
+			{
 				live_bus_service: '++id, bus_stop_code, bus_service_no'
 			}
 		)
+
 		await db.open()
 		await responseDb.open()
+		await saveDb.open()
 	}
 
 	const getSavedBusList = async () => {
-		return db.live_bus_service.toArray()
+		return saveDb.live_bus_service.toArray()
 	}
 
 	const getBusStopList = async () => {
@@ -90,7 +98,7 @@
 	}
 
 	const onInsertLiveBusServiceList = async (list) => {
-		await db.live_bus_service.bulkAdd(list)
+		await saveDb.live_bus_service.bulkAdd(list)
 	}
 
 	const onInsertBusRouteResponseList = async (list) => {
@@ -125,7 +133,7 @@
 	}
 
 	const onClearLiveBusService = async () => {
-		db.live_bus_service.clear()
+		saveDb.live_bus_service.clear()
 	}
 
 	const onClearBusStop = async () => {
