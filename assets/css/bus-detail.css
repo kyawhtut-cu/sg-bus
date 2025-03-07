@@ -28,8 +28,14 @@
 	font-size: 18px!important;
 }
 
-.bus-stop-point-ripple:before,
-.bus-stop-point-ripple:after {
+.bus-stop-point.info {
+	background: unset;
+}
+
+.bus-stop-point.info:before,
+.bus-stop-point.info:after,
+.bus-stop-point.ripple:before,
+.bus-stop-point.ripple:after {
 	content: '';
 	display: block;
 	position: absolute;
@@ -41,12 +47,19 @@
 	border-radius: 50%;
 }
 
+.bus-stop-point.info:before,
+.bus-stop-point.info:after {
+	background: unset;
+}
 
-.bus-stop-point-ripple:before {
+
+.bus-stop-point.info:before,
+.bus-stop-point.ripple:before {
   animation: ripple 2s linear infinite;
 }
 
-.bus-stop-point-ripple:after {
+.bus-stop-point.info:after,
+.bus-stop-point.ripple:after {
   animation: ripple 2s linear 1s infinite;
 }
 

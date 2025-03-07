@@ -2,7 +2,7 @@
 
 	let ApiService = null
 	let Db = null
-	const VERSION = 1
+	const VERSION = 2
 
 	jQuery.Repo = function (db, apiService) {
 		ApiService = apiService
@@ -34,12 +34,16 @@
 		}
 	}
 
-	async function onUpdateData() {
+	async function onUpdateData(isForce = false) {
+		if (isForce) {
+			localStorage.removeItem('lastUpdatedTime')
+			localStorage.removeItem('lastInsertedTime')
+		}
 		if(!isNeedToDataUpdate()) return
 
-		await onLoadData()
+		await onLoadData(isForce)
 
-		await onInsertData()
+		await onInsertData(isForce)
 	}
 
 	function isNeedToDataUpdate() {
@@ -123,13 +127,15 @@
 			return service.OriginCode != '' && service.DestinationCode != ''
 		}).forEach( service => {
 			if(!busServiceList.hasOwnProperty(service.ServiceNo)) {
+				const busLoopStopeCode = _.find(responseBusStopList, { RoadName: service.LoopDesc })?.BusStopCode ?? ''
 				busServiceList[service.ServiceNo] = {
 					bus_service_no: service.ServiceNo,
 					bus_operator: service.Operator,
 					bus_category: service.Category,
 					bus_direction_list: [],
 					bus_way_point: [],
-					bus_route_list: []
+					bus_route_list: [],
+					bus_loop_stop_code: busLoopStopeCode
 				}
 			}
 

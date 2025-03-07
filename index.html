@@ -58,10 +58,15 @@
 		}
 
 		.header .busStopName {
+			width: 0%;
 			margin-left: 10px;
 			font-size: 36px;
-			white-space: nowrap;
+		}
+
+		.busStopName p {
 			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
 		}
 
 		.setting-dialog {
@@ -110,16 +115,12 @@
 
 			await Repo.init()
 
-			console.log(Repo.isNeedToDataUpdate())
-
 			await Db.initData()
 			if (Repo.isNeedToDataUpdate()) {
 				Home.showLoading()
 				await Repo.onUpdateData()
 			}
 			Home.showHome()
-
-			// $('a').webuiPopover();
 
 			async function preventScreenSaver() {
 				try {

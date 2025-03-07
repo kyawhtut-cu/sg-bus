@@ -2,7 +2,6 @@
 
 	let Repo = null
 
-	let dialogDiv = null
 	let settingCardList = null
 
 	let busServiceList = []
@@ -78,16 +77,24 @@
 			class: 'waves-effect waves-light btn-flat d-flex justify-content-center align-items-center'
 		})
 		btnSave.text('Save')
+
+		const btnUpdate = $('<button>', {
+			id: 'btnUpdate',
+			class: 'waves-effect waves-light btn-flat d-flex justify-content-center align-items-center'
+		})
+		btnUpdate.text('Update Data')
 		
 		const footerDiv = $('<div>', {
 			class: 'modal-footer',
 			style: 'border-top: unset;'
 		})
+		footerDiv.append(btnUpdate)
 		footerDiv.append(btnAddNew)
 		footerDiv.append(btnCancel)
 		footerDiv.append(btnSave)
 
-		dialogDiv = $('<div>', {
+		const dialogDiv = $('<div>', {
+			id: 'settingDialog',
 			class: 'modal modal-fixed-footer'
 		})
 
@@ -110,17 +117,12 @@
 			search: 'Search column',
 			data: columnList
 		})
-
-		dialogDiv.modal({
-			opacity: 0.2,
-			inDuration: 300,
-			outDuration: 200,
-			dismissible: false
-		})
 	}
 
 	async function open() {
 		init()
+
+		const dialogDiv = $('#settingDialog')
 
 		busStopList = await Repo.getBusStopList()
 		settingCardList.empty()
@@ -148,16 +150,28 @@
 		)
 
 		return new Promise((resolve, reject) => {
+			let result = 0
+			dialogDiv.modal({
+				opacity: 0.2,
+				inDuration: 300,
+				outDuration: 200,
+				dismissible: false,
+				onCloseEnd: () => {
+					resolve(result)
+					setTimeout(() => {
+						dialogDiv.remove()
+					}, 300)
+				}
+			})
+
 			$('#btnCancel').on('click', function () {
 				$('#columnCount').val(Repo.getColumnCount())
 				$('#columnCount').formSelect()
 
 				busServiceList = []
 				busStopList = []
-				
+
 				dialogDiv.modal('close')
-				onDestroy()
-				resolve(false)
 			})
 
 			$('#btnSave').on('click', async function () {
@@ -182,10 +196,15 @@
 
 				Repo.setColumnCount($('#columnCount').val())
 
+				result = 1
 				dialogDiv.modal('close')
-				onDestroy()
-				resolve(isHasChanges)
 			})
+
+			$('#btnUpdate').on('click', () => {
+				result = -1
+				dialogDiv.modal('close')
+			})
+
 			dialogDiv.modal('open')
 		})
 	}
@@ -365,12 +384,6 @@
 				return obj
 			}
 		})
-	}
-
-	function onDestroy() {
-		setTimeout(() => {
-			dialogDiv.remove()
-		}, 300)
 	}
 
 }(jQuery))

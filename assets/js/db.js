@@ -49,7 +49,7 @@
 		db.version(1).stores(
 			{
 				bus_stop_table: 'bus_stop_code, bus_stop_name, road_name, bus_service_no_list, latitude, longitude',
-				bus_service_table: 'bus_service_no, bus_operator, bus_category, bus_route_list, bus_direction_list, bus_way_point',
+				bus_service_table: 'bus_service_no, bus_operator, bus_category, bus_route_list, bus_direction_list, bus_way_point, bus_loop_stop_code',
 				live_bus_service: '++id, bus_stop_code, bus_service_no'
 			}
 		)

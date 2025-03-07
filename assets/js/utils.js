@@ -23,4 +23,9 @@
 
 		return min.toString()
 	}
+
+	jQuery.convertStringToTime = (value) => {
+		if (value === '-') return value
+		return value.substring(0, 2) + ":" + value.substring(2)
+	}
 }(jQuery))
