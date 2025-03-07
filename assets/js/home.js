@@ -221,7 +221,7 @@
 		})
 
 		timeoutId = setTimeout(() => {
-			// onListenLiveBus(savedBusList, row)
+			onListenLiveBus(savedBusList, row)
 		}, 1000 * 10)
 	}
 
