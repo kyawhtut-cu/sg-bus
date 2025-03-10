@@ -74,14 +74,14 @@
 
 		let directionList = busService.bus_direction_list
 		busServiceRouteList = busService.bus_route_list
-		if (directionList.length == 1 && busService.bus_loop_stop_code != '') {
+		const busLoopStopCodeIndex = _.findIndex(
+			busServiceRouteList,
+			{
+				bus_stop_code : busService.bus_loop_stop_code
+			}
+		)
+		if (directionList.length == 1 && busLoopStopCodeIndex >= 0) {
 			directionList = [1, 2]
-			const busLoopStopCodeIndex = _.findIndex(
-				busServiceRouteList,
-				{
-					bus_stop_code : busService.bus_loop_stop_code
-				}
-			)
 			busServiceRouteList = []
 			busService.bus_route_list.forEach( (route, index) => {
 				let newRoute = route

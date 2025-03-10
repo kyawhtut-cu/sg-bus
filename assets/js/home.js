@@ -154,7 +154,7 @@
 			const colClass = Math.floor(12 / row.length)
 			row.forEach( col => {
 				const colDiv = $(`<div>`, {
-					class: 'column',
+					class: 'column position-relative',
 					style: 'padding: 0 .5rem;'
 				})
 				colDiv.appendTo(gridDiv)
@@ -179,10 +179,10 @@
 		headerDiv.appendTo(colDiv)
 
 		const popOver = $('<div>', {
-			class: 'position-absolute',
-			style: 'width: 93%; height: 56px;'
+			class: 'w-100 position-absolute',
+			style: 'height: 56px; top: 8px; left: 8px; cursor: pointer;'
 		})
-		popOver.appendTo(headerDiv)
+		popOver.appendTo(colDiv)
 		setPopover(
 			popOver,
 			`${savedBus.bus_service_no} - ${savedBus.bus_stop_name} (${savedBus.bus_stop_code})`,
@@ -203,7 +203,8 @@
 		)
 
 		const btnDetail = $('<i>', {
-			class: 'material-icons align-self-center btn-flat waves-effect d-flex align-items-center'
+			class: 'material-icons align-self-center btn-flat waves-effect d-flex align-items-center',
+			style: 'height: 56px;'
 		}).text('info_outline')
 		btnDetail.appendTo(headerDiv)
 		btnDetail.on('click', async function() {
