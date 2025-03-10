@@ -216,7 +216,7 @@
 
 	function onAddCard(busService) {
 		const card = $('<div>', {
-			class: 'card-panel',
+			class: 'card-panel hoverable',
 			style: 'position: relative;'
 		})
 		card.appendTo(settingCardList)
