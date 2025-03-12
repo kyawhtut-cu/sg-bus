@@ -1,13 +1,68 @@
-.bus-stop-line {
-	width: 4px;
-	height: 70px;
-	left: 50%;
-	transform: translate(-50%);
-	background: blue;
+.curve-top {
+	width: 50%;
+	height: 52%;
 }
 
-.bus-stop-line.isLast {
-	height: 14px;
+.route .line {
+	width: 50%;
+}
+
+.route .left {
+	left: 0;
+}
+
+.route .right {
+	right: 0;
+}
+
+.route > .col-6:nth-child(2n) .curve-top {
+	top: 48%;
+	right: 10px;
+	border-radius: 0 150px;
+	border-right: 4px solid #f44336;
+	border-top: 4px solid #f44336;
+	border-bottom: unset;
+}
+
+.route > .col-6:nth-child(4n) .curve-top {
+	top: 0;
+	right: 10px;
+	border-radius: 0 0 150px 0;
+	border-right: 4px solid #f44336;
+	border-bottom: 4px solid #f44336;
+	border-top: unset;
+}
+
+.route > .col-6:nth-child(2n+1) .curve-top {
+	top: 48%;
+	left: 10px;
+	border-radius: 150px 0 0;
+	border-left: 4px solid #f44336;
+	border-top: 4px solid #f44336;
+	border-right: unset;
+	border-bottom: unset;
+}
+
+.route > .col-6:nth-child(4n+1) .curve-top {
+	top: 0;
+	right: 10px;
+	border-radius: 0 150px 0;
+	border-left: 4px solid #f44336;
+	border-bottom: 4px solid #f44336;
+	border-top: unset;
+	border-right: unset;
+}
+
+@media (max-width: 576px) {
+	.bus-route {
+		padding: .5rem;
+	}
+}
+
+@media (min-width: 576px) {
+	.bus-route {
+		padding: .5rem 10%;
+	}
 }
 
 .bus-stop-point {
@@ -19,8 +74,6 @@
 	color: white;
 	border-radius: 50%;
 	background-color: #ff4343;
-	left: 50%;
-	transform: translate(-50%);
 	cursor: pointer;
 }
 
@@ -55,18 +108,18 @@
 
 .bus-stop-point.info:before,
 .bus-stop-point.ripple:before {
-  animation: ripple 2s linear infinite;
+	animation: ripple 2s linear infinite;
 }
 
 .bus-stop-point.info:after,
 .bus-stop-point.ripple:after {
-  animation: ripple 2s linear 1s infinite;
+	animation: ripple 2s linear 1s infinite;
 }
 
 @keyframes ripple{
-  0% { transform: scale(1.2); opacity: .5}
-  25% { transform: scale(1.4); opacity: .4}
-  50% { transform: scale(1.6); opacity:.3; }
-  75% { transform: scale(1.8); opacity:.2; }
-  100% { transform: scale(2); opacity: 0; }
+	0% { transform: scale(1.2); opacity: .5}
+	25% { transform: scale(1.4); opacity: .4}
+	50% { transform: scale(1.6); opacity:.3; }
+	75% { transform: scale(1.8); opacity:.2; }
+	100% { transform: scale(2); opacity: 0; }
 }

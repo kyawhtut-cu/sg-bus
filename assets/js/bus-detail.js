@@ -50,7 +50,7 @@
 		)
 
 		const busDetailDiv = $('<div>', {
-			style: 'flex-grow: 1;'
+			style: 'height: calc(100% - 56px); flex-grow: 1;'
 		})
 		busDetailDiv.appendTo(contentDiv)
 
@@ -63,7 +63,7 @@
 		setLiveBusTiming(nextBusList)
 
 		const busRouteDiv = $('<div>', {
-			style: 'height: calc(100% - 116px);'
+			style: 'height: calc(100% - 124px);'
 		})
 		busRouteDiv.appendTo(busDetailDiv)
 
@@ -111,110 +111,155 @@
 			const tabContent = $('<div>', {
 				id: `tab${direction}`,
 				class: 'w-100 justify-content-center',
-				style: 'height: calc(100% - 56px); overflow-y: auto;'
+				style: 'height: calc(100% - 48px);'
 			})
 			tabContent.appendTo(busRouteDiv)
 
 			const busRouteListDiv = $('<div>', {
-				class: 'w-100 position-relative'
+				class: 'container-fluid w-100 position-relative bus-route',
+				style: 'height: calc(100% - .5rem); overflow-y: auto;'
 			})
 			busRouteListDiv.appendTo(tabContent)
 
+			const rowDiv = $('<div>', {
+				class: 'row m-0 g-1 route'
+			})
+			rowDiv.appendTo(busRouteListDiv)
+
+			const color = ['red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green']
+
 			let isFound = false
-			const promises = busRouteList.map( async (route, index) => {
-				const isRight = index % 2 === 0
-				const isLast = index + 1 >= busRouteList.length
+			const promises = _(busRouteList).chunk(2).map( (chunk, index, arrayChunks) => {
+				if (chunk.length === 1 && arrayChunks.length === index + 1) {
+					chunk = _.concat(chunk, -1)
+				}
+				return index % 2 === 0 ? chunk : _.reverse(chunk)
+			}).map( (chunk, index, arrayChunks) => {
+				return chunk.map((value, subIndex) => {
+				const row = index + 1
 
-				const routeBusStop = await Repo.getBusStopByStopCode(route.bus_stop_code)
+				let showLine = 'notShow'
+				let isNeedToShowCurve = false
+				let previousValue = chunk[subIndex === 0 ? subIndex + 1 : subIndex - 1]
 
-				const routeInfoDiv = $('<div>', {
-					class: `position-absolute d-flex fw-bold ${isRight ? '' : 'justify-content-end'}`,
-					style: `
-						width: calc(50% - 33px);
-						min-height: 70px;
-						max-height: ${70 * (index + 2) - 8}px;
-						overflow: auto;
-						${isRight ? '' : 'left: 8px;'}
-						${isRight ? 'right: 8px;' : ''}
-						top: ${70 * index + 24}px;
-						font-size: 18px;
-						line-height: 1;
-						${isRight ? '' : 'text-align: right;'}
-					`
-				}).text(routeBusStop.bus_stop_name)
-				routeInfoDiv.appendTo(busRouteListDiv)
+				if (subIndex === 0 && previousValue != -1) {
+					showLine = chunk.length > 1 ? 'right' : 'notShow'
+				} else if (subIndex === chunk.length - 1 && previousValue != -1) {
+					showLine = chunk.length > 1 ? 'left' : 'notShow'
+				}
 
-				const routeLine = $('<div>', {
-					class: `position-absolute bus-stop-line ${isLast ? 'isLast' : ''}`,
-					style: `
-						top: ${70 * index + (index == 0 ? 8 : 0) + 10}px;
-					`
-				})
-				routeLine.appendTo(busRouteListDiv)
-
-				const bulletTop = 70 * index + 23
-				const routeBulletAnimation = $('<span>', {
-					class: 'position-absolute bus-stop-point ripple',
-					style: `top: ${bulletTop}px;`
-				})
-				routeBulletAnimation.appendTo(busRouteListDiv)
-
-				const routeBullet = $('<span>', {
-					class: 'position-absolute bus-stop-point',
-					style: `top: ${bulletTop}px;`
-				})
-				routeBullet.appendTo(busRouteListDiv)
-				$('<i>', {
-					class: 'material-icons'
-				}).text('location_on').appendTo(routeBullet)
-
-				const information = $('<span>', {
-					class: 'position-absolute bus-stop-point info',
-					style: `top: ${bulletTop}px;`
-				})
-				information.appendTo(busRouteListDiv)
-				setPopover(
-					information,
-					`${routeBusStop.bus_stop_name} (${routeBusStop.bus_stop_code})`,
-					[
-						{
-							day: `Sat`,
-							first: route.sat_first_bus,
-							last: route.sat_last_bus
-						},
-						{
-							day: `WD`,
-							first: route.wd_first_bus,
-							last: route.wd_last_bus
-						},
-						{
-							day: `Sun`,
-							first: route.sun_first_bus,
-							last: route.sun_last_bus
+				if (row % 2 !== 0) {
+					if (subIndex === 0) {
+						if (index > 0) {
+							isNeedToShowCurve = true
 						}
-					]
-				)
+					} else {
+						if (index < arrayChunks.length - 1) {
+							isNeedToShowCurve = true
+						}
+					}
+				} else {
+					if (subIndex === 0) {
+						if (index < arrayChunks.length - 1) {
+							isNeedToShowCurve = true
+						}
+					} else {
+						if (index <= arrayChunks.length - 1) {
+							isNeedToShowCurve = true
+						}
+					}
+				}
 
-				if (!isFound && route.bus_stop_code == busStop.bus_stop_code) {
+				return { value, row, showLine, isNeedToShowCurve };
+				});
+			}).flatten().value().map( async (data, index) => {
+
+				const column = $('<div>', {
+					class: `col-6 m-0 p-0 position-relative d-flex align-items-center justify-content-center`,
+					style: `height: 100px;`
+				})
+				column.appendTo(rowDiv)
+
+				if (data.value != -1) {
+					const routeBusStop = await Repo.getBusStopByStopCode(data.value.bus_stop_code)
+
+					$('<span>', {
+						class: 'w-100 position-absolute fw-bold',
+						style: `
+							top: ${ data.row % 2 != 0 ? (index % 2 === 0 ? '70%' : '15%') : index % 2 != 0 ? '70%' : '15%'};
+							left: 50%;
+							font-size: 18px;
+							line-height: 1;
+							transform: translate(-50%);
+							text-align: center;
+							text-overflow: ellipsis;
+							white-space: nowrap;
+							overflow: hidden;
+						`
+					}).text(routeBusStop.bus_stop_name).appendTo(column)
+
+					$('<span>', {
+						class: `position-absolute red line ${data.showLine == 'left' ? 'left' : data.showLine == 'right' ? 'right' : 'd-none'}`,
+						style: 'height: 4px;'
+					}).appendTo(column)
+
+					if (data.isNeedToShowCurve) {
+						$('<span>', {
+							class: 'position-absolute curve-top'
+						}).appendTo(column)
+					}
+
+					const routeBulletAnimation = $('<span>', {
+						class: 'position-absolute bus-stop-point ripple',
+					})
+					routeBulletAnimation.appendTo(column)
+
+					const routeBullet = $('<span>', {
+						class: 'position-absolute bus-stop-point',
+					})
+					routeBullet.appendTo(column)
+					$('<i>', {
+						class: 'material-icons'
+					}).text('location_on').appendTo(routeBullet)
+
+					const information = $('<span>', {
+						class: 'position-absolute bus-stop-point info'
+					})
+					information.appendTo(column)
+					setPopover(
+						information,
+						`${routeBusStop.bus_stop_name} (${routeBusStop.bus_stop_code})`,
+						[
+							{
+								day: `Sat`,
+								first: data.value.sat_first_bus,
+								last: data.value.sat_last_bus
+							},
+							{
+								day: `WD`,
+								first: data.value.wd_first_bus,
+								last: data.value.wd_last_bus
+							},
+							{
+								day: `Sun`,
+								first: data.value.sun_first_bus,
+								last: data.value.sun_last_bus
+							}
+						]
+					)
+				}
+
+				if (data.value != -1 && !isFound && data.value.bus_stop_code == busStop.bus_stop_code) {
 					isFound = true
-					return index == 0 ? 0 : bulletTop
+					return data.row === 1 ? 0 : 100 * data.row
 				} else {
 					return 0
 				}
 			})
 
-			$('<div>', {
-				class: 'position-absolute',
-				style: `
-					min-height: 16px;
-					top: ${70 * busRouteList.length + 10}px;
-					opacity: 0;
-				`
-			}).text('empty').appendTo(busRouteListDiv)
-
 			const scrollPosition = _.sum(await Promise.all(promises))
 			if (scrollPosition > 30) {
-				tabContent.animate(
+				busRouteListDiv.animate(
 					{
 						scrollTop: scrollPosition - 35
 					},
@@ -247,6 +292,7 @@
 					resolve()
 					setTimeout(() => {
 						dialogDiv.remove()
+						$('#busDetailDialog').remove()
 					}, 300)
 				}
 			})
@@ -383,5 +429,42 @@
 				setPopover(tag, title, operations)
 			}
 		})
+	}
+
+	function setCssOrder(idList) {
+		return
+		if ($('#busDetailDialogCss')) $('#busDetailDialogCss').remove()
+		let small = ''
+		let large = ''
+
+		idList.forEach( (id, index) => {
+			small += `
+				#id${id} {
+					order: ${id == 0 ? 1 : id == 1 ? 0 : id}
+				}
+			`
+			large += `
+				#id${id} {
+					order: ${index}
+				}
+			`
+		})
+
+		const style = $('<style>')
+		style.appendTo($('head'))
+		style.prop('type', 'text/css')
+		style.attr('id', 'busDetailDialogCss')
+
+		style.text(
+			`
+				@media (max-width: 576px) {
+					${small}
+				}
+
+				@media (min-width: 576px) {
+					${large}
+				}
+			`
+		)
 	}
 }(jQuery))

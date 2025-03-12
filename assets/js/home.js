@@ -173,7 +173,7 @@
 		}
 
 		const headerDiv = $('<div>', {
-			class: 'w-100 bg-light d-flex header',
+			class: 'w-100 bg-light d-flex header testClass',
 			style: 'margin-top: .5rem;'
 		})
 		headerDiv.appendTo(colDiv)
