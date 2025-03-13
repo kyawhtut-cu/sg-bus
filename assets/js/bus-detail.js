@@ -95,6 +95,7 @@
 			})
 		}
 
+		let isFound = false
 		directionList.forEach( async (direction) => {
 			const busRouteList = _.filter(busServiceRouteList, { direction : direction })
 			const isCurrentDirection = _.some(busRouteList, { bus_stop_code : busStop.bus_stop_code })
@@ -128,7 +129,6 @@
 
 			const color = ['red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green']
 
-			let isFound = false
 			const promises = _(busRouteList).chunk(2).map( (chunk, index, arrayChunks) => {
 				if (chunk.length === 1 && arrayChunks.length === index + 1) {
 					chunk = _.concat(chunk, -1)
@@ -136,42 +136,47 @@
 				return index % 2 === 0 ? chunk : _.reverse(chunk)
 			}).map( (chunk, index, arrayChunks) => {
 				return chunk.map((value, subIndex) => {
-				const row = index + 1
+					const row = index + 1
 
-				let showLine = 'notShow'
-				let isNeedToShowCurve = false
-				let previousValue = chunk[subIndex === 0 ? subIndex + 1 : subIndex - 1]
+					let showLine = 'd-none'
+					let curve = 'd-none'
+					let isNeedToShowCurve = false
+					let previousValue = chunk[subIndex === 0 ? subIndex + 1 : subIndex - 1]
 
-				if (subIndex === 0 && previousValue != -1) {
-					showLine = chunk.length > 1 ? 'right' : 'notShow'
-				} else if (subIndex === chunk.length - 1 && previousValue != -1) {
-					showLine = chunk.length > 1 ? 'left' : 'notShow'
-				}
+					if (subIndex === 0 && previousValue != -1) {
+						showLine = chunk.length > 1 ? 'line-right' : 'd-none'
+					} else if (subIndex === chunk.length - 1 && previousValue != -1) {
+						showLine = chunk.length > 1 ? 'line-left' : 'd-none'
+					}
 
-				if (row % 2 !== 0) {
-					if (subIndex === 0) {
-						if (index > 0) {
-							isNeedToShowCurve = true
+					if (row % 2 !== 0) {
+						if (subIndex === 0) {
+							if (index > 0) {
+								curve = 'curve-above curve-left curve-above-left'
+								isNeedToShowCurve = true
+							}
+						} else {
+							if (index < arrayChunks.length - 1) {
+								curve = 'curve-below curve-right curve-below-right'
+								isNeedToShowCurve = true
+							}
 						}
 					} else {
-						if (index < arrayChunks.length - 1) {
-							isNeedToShowCurve = true
+						if (subIndex === 0) {
+							if (index < arrayChunks.length - 1) {
+								curve = 'curve-below curve-left curve-below-left'
+								isNeedToShowCurve = true
+							}
+						} else {
+							if (index <= arrayChunks.length - 1) {
+								curve = 'curve-above curve-right curve-above-right'
+								isNeedToShowCurve = true
+							}
 						}
 					}
-				} else {
-					if (subIndex === 0) {
-						if (index < arrayChunks.length - 1) {
-							isNeedToShowCurve = true
-						}
-					} else {
-						if (index <= arrayChunks.length - 1) {
-							isNeedToShowCurve = true
-						}
-					}
-				}
 
-				return { value, row, showLine, isNeedToShowCurve };
-				});
+					return { value, row, showLine, isNeedToShowCurve, curve }
+				})
 			}).flatten().value().map( async (data, index) => {
 
 				const column = $('<div>', {
@@ -181,33 +186,16 @@
 				column.appendTo(rowDiv)
 
 				if (data.value != -1) {
+					column.attr('id', data.value.bus_stop_code)
 					const routeBusStop = await Repo.getBusStopByStopCode(data.value.bus_stop_code)
 
 					$('<span>', {
-						class: 'w-100 position-absolute fw-bold',
-						style: `
-							top: ${ data.row % 2 != 0 ? (index % 2 === 0 ? '70%' : '15%') : index % 2 != 0 ? '70%' : '15%'};
-							left: 50%;
-							font-size: 18px;
-							line-height: 1;
-							transform: translate(-50%);
-							text-align: center;
-							text-overflow: ellipsis;
-							white-space: nowrap;
-							overflow: hidden;
-						`
-					}).text(routeBusStop.bus_stop_name).appendTo(column)
-
-					$('<span>', {
-						class: `position-absolute red line ${data.showLine == 'left' ? 'left' : data.showLine == 'right' ? 'right' : 'd-none'}`,
-						style: 'height: 4px;'
+						class: `position-absolute red line ${data.showLine}`
 					}).appendTo(column)
 
-					if (data.isNeedToShowCurve) {
-						$('<span>', {
-							class: 'position-absolute curve-top'
-						}).appendTo(column)
-					}
+					$('<span>', {
+						class: `position-absolute curve ${data.curve}`
+					}).appendTo(column)
 
 					const routeBulletAnimation = $('<span>', {
 						class: 'position-absolute bus-stop-point ripple',
@@ -220,7 +208,7 @@
 					routeBullet.appendTo(column)
 					$('<i>', {
 						class: 'material-icons'
-					}).text('location_on').appendTo(routeBullet)
+					}).text(!isFound && data.value.bus_stop_code == busStop.bus_stop_code ? `my_location` : `location_on`).appendTo(routeBullet)
 
 					const information = $('<span>', {
 						class: 'position-absolute bus-stop-point info'
@@ -247,6 +235,21 @@
 							}
 						]
 					)
+
+					$('<span>', {
+						class: 'w-100 position-absolute fw-bold',
+						style: `
+							top: ${ data.row % 2 != 0 ? (index % 2 === 0 ? '70%' : '15%') : index % 2 != 0 ? '70%' : '15%'};
+							left: 50%;
+							font-size: 18px;
+							line-height: 1;
+							transform: translate(-50%);
+							text-align: center;
+							text-overflow: ellipsis;
+							white-space: nowrap;
+							overflow: hidden;
+						`
+					}).text(routeBusStop.bus_stop_name).appendTo(column)
 				}
 
 				if (data.value != -1 && !isFound && data.value.bus_stop_code == busStop.bus_stop_code) {
@@ -266,6 +269,18 @@
 					300
 				)
 			}
+			// if(scrollPosition != 0) $('<i>', {
+			// 	class: 'position-absolute material-icons',
+			// 	style: `color: blue; top: 25%; left: 85%;`
+			// }).text('directions_bus').appendTo($('#46531'))
+			// $('<i>', {
+			// 	class: 'position-relative material-icons',
+			// 	style: `top: ${scrollPosition - 56}px; left: 70%; color: blue; transform: translate(-50%, -50%);`
+			// }).text('directions_bus').appendTo(busMap)
+			// $('<i>', {
+			// 	class: 'position-relative material-icons',
+			// 	style: `top: 1905px; left: 85%; color: blue; transform: translate(-50%, -50%);`
+			// }).text('directions_bus').appendTo(busMap)
 		})
 
 		const btnDismiss = $('<button>', {

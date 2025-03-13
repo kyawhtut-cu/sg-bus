@@ -1,56 +1,60 @@
-.curve-top {
-	width: 50%;
-	height: 52%;
-}
-
 .route .line {
 	width: 50%;
+	height: 8px;
 }
 
-.route .left {
+.route .line-left {
 	left: 0;
 }
 
-.route .right {
+.route .line-right {
 	right: 0;
 }
 
-.route > .col-6:nth-child(2n) .curve-top {
-	top: 48%;
-	right: 10px;
-	border-radius: 0 150px;
-	border-right: 4px solid #f44336;
-	border-top: 4px solid #f44336;
-	border-bottom: unset;
+.route .curve {
+	width: 50%;
+	height: 54%;
+	border: 8px solid #f44336;
 }
 
-.route > .col-6:nth-child(4n) .curve-top {
+.route .curve-below {
+	top: 46%;
+}
+
+.route .curve-above {
 	top: 0;
-	right: 10px;
-	border-radius: 0 0 150px 0;
-	border-right: 4px solid #f44336;
-	border-bottom: 4px solid #f44336;
-	border-top: unset;
 }
 
-.route > .col-6:nth-child(2n+1) .curve-top {
-	top: 48%;
+.route .curve-left {
 	left: 10px;
+}
+
+.route .curve-right {
+	right: 10px;
+}
+
+.route .curve-above-left {
+	border-radius: 0 0 0 150px;
+	border-top: unset;
+	border-right: unset;
+}
+
+.route .curve-above-right {
+	border-radius: 0 0 150px;
+	border-top: unset;
+	border-left: unset;
+}
+
+.route .curve-below-left {
 	border-radius: 150px 0 0;
-	border-left: 4px solid #f44336;
-	border-top: 4px solid #f44336;
 	border-right: unset;
 	border-bottom: unset;
 }
 
-.route > .col-6:nth-child(4n+1) .curve-top {
-	top: 0;
-	right: 10px;
-	border-radius: 0 150px 0;
-	border-left: 4px solid #f44336;
-	border-bottom: 4px solid #f44336;
-	border-top: unset;
-	border-right: unset;
+.route .curve-below-right {
+	border-radius: 0 150px;
+	border-left: unset;
+	border-bottom: unset;
 }
 
 @media (max-width: 576px) {
@@ -66,14 +70,15 @@
 }
 
 .bus-stop-point {
-	width: 24px;
-	height: 24px;
+	width: 28px;
+	height: 28px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: white;
+	color: #ff4343;
+	background-color: white;
 	border-radius: 50%;
-	background-color: #ff4343;
+	border: .2rem solid #ff4343;
 	cursor: pointer;
 }
 
