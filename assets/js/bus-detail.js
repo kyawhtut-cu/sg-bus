@@ -60,7 +60,6 @@
 			style: 'min-height: 120px;'
 		})
 		busServiceDiv.appendTo(busDetailDiv)
-		setLiveBusTiming(nextBusList)
 
 		const busRouteDiv = $('<div>', {
 			style: 'height: calc(100% - 124px);'
@@ -95,10 +94,86 @@
 			})
 		}
 
+		busServiceRouteList = await Promise.all(
+			_.map(
+				busServiceRouteList.slice(),
+				async (busRoute) => {
+					busRoute['route_bus_stop'] = await Repo.getBusStopByStopCode(busRoute.bus_stop_code)
+					return busRoute
+				}
+			)
+		)
+
 		let isFound = false
-		directionList.forEach( async (direction) => {
-			const busRouteList = _.filter(busServiceRouteList, { direction : direction })
-			const isCurrentDirection = _.some(busRouteList, { bus_stop_code : busStop.bus_stop_code })
+		busServiceRouteList = _.mapValues(
+			_.groupBy(busServiceRouteList, 'direction'), 
+			(routeList) => {
+				return _(routeList).chunk(2).map( (chunk, index, arrayChunks) => {
+					if (chunk.length === 1 && arrayChunks.length === index + 1) {
+						chunk = _.concat(chunk, -1)
+					}
+					return index % 2 === 0 ? chunk : _.reverse(chunk)
+				}).map( (chunk, index, arrayChunks) => {
+					return chunk.map((value, subIndex) => {
+						const row = index + 1
+
+						let showLine = 'd-none'
+						let curve = 'd-none'
+						let isNeedToShowCurve = false
+						let previousValue = chunk[subIndex === 0 ? subIndex + 1 : subIndex - 1]
+
+						if (subIndex === 0 && previousValue != -1) {
+							showLine = chunk.length > 1 ? 'line-right' : 'd-none'
+						} else if (subIndex === chunk.length - 1 && previousValue != -1) {
+							showLine = chunk.length > 1 ? 'line-left' : 'd-none'
+						}
+
+						if (row % 2 !== 0) {
+							if (subIndex === 0) {
+								if (index > 0) {
+									curve = 'curve-above curve-left curve-above-left'
+									isNeedToShowCurve = true
+								}
+							} else {
+								if (index < arrayChunks.length - 1) {
+									curve = 'curve-below curve-right curve-below-right'
+									isNeedToShowCurve = true
+								}
+							}
+						} else {
+							if (subIndex === 0) {
+								if (index < arrayChunks.length - 1) {
+									curve = 'curve-below curve-left curve-below-left'
+									isNeedToShowCurve = true
+								}
+							} else {
+								if (index <= arrayChunks.length - 1) {
+									curve = 'curve-above curve-right curve-above-right'
+									isNeedToShowCurve = true
+								}
+							}
+						}
+
+						if (value != -1 && !isFound && value.bus_stop_code == busStop.bus_stop_code) {
+							isFound = true
+							value['current_bus_top'] = true
+						}
+
+						return { value, row, showLine, isNeedToShowCurve, curve }
+					})
+				}).flatten().value()
+			}
+		)
+
+		_.map(busServiceRouteList, (busRouteList, direction) => {
+			const isCurrentDirection = _.some(
+				busRouteList,
+				{
+					value: {
+						bus_stop_code : busStop.bus_stop_code
+					}
+				}
+			)
 
 			const tab = $('<li>', {
 				class: 'tab col s3'
@@ -127,57 +202,7 @@
 			})
 			rowDiv.appendTo(busRouteListDiv)
 
-			const color = ['red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green','red', 'yellow', 'blue', 'green']
-
-			const promises = _(busRouteList).chunk(2).map( (chunk, index, arrayChunks) => {
-				if (chunk.length === 1 && arrayChunks.length === index + 1) {
-					chunk = _.concat(chunk, -1)
-				}
-				return index % 2 === 0 ? chunk : _.reverse(chunk)
-			}).map( (chunk, index, arrayChunks) => {
-				return chunk.map((value, subIndex) => {
-					const row = index + 1
-
-					let showLine = 'd-none'
-					let curve = 'd-none'
-					let isNeedToShowCurve = false
-					let previousValue = chunk[subIndex === 0 ? subIndex + 1 : subIndex - 1]
-
-					if (subIndex === 0 && previousValue != -1) {
-						showLine = chunk.length > 1 ? 'line-right' : 'd-none'
-					} else if (subIndex === chunk.length - 1 && previousValue != -1) {
-						showLine = chunk.length > 1 ? 'line-left' : 'd-none'
-					}
-
-					if (row % 2 !== 0) {
-						if (subIndex === 0) {
-							if (index > 0) {
-								curve = 'curve-above curve-left curve-above-left'
-								isNeedToShowCurve = true
-							}
-						} else {
-							if (index < arrayChunks.length - 1) {
-								curve = 'curve-below curve-right curve-below-right'
-								isNeedToShowCurve = true
-							}
-						}
-					} else {
-						if (subIndex === 0) {
-							if (index < arrayChunks.length - 1) {
-								curve = 'curve-below curve-left curve-below-left'
-								isNeedToShowCurve = true
-							}
-						} else {
-							if (index <= arrayChunks.length - 1) {
-								curve = 'curve-above curve-right curve-above-right'
-								isNeedToShowCurve = true
-							}
-						}
-					}
-
-					return { value, row, showLine, isNeedToShowCurve, curve }
-				})
-			}).flatten().value().map( async (data, index) => {
+			const scrollingPositionList = busRouteList.map( (data, index) => {
 
 				const column = $('<div>', {
 					class: `col-6 m-0 p-0 position-relative d-flex align-items-center justify-content-center`,
@@ -187,7 +212,7 @@
 
 				if (data.value != -1) {
 					column.attr('id', data.value.bus_stop_code)
-					const routeBusStop = await Repo.getBusStopByStopCode(data.value.bus_stop_code)
+					const routeBusStop = data.value.route_bus_stop
 
 					$('<span>', {
 						class: `position-absolute red line ${data.showLine}`
@@ -208,7 +233,7 @@
 					routeBullet.appendTo(column)
 					$('<i>', {
 						class: 'material-icons'
-					}).text(!isFound && data.value.bus_stop_code == busStop.bus_stop_code ? `my_location` : `location_on`).appendTo(routeBullet)
+					}).text(data.value.current_bus_top ? `my_location` : `location_on`).appendTo(routeBullet)
 
 					const information = $('<span>', {
 						class: 'position-absolute bus-stop-point info'
@@ -239,11 +264,8 @@
 					$('<span>', {
 						class: 'w-100 position-absolute fw-bold',
 						style: `
-							top: ${ data.row % 2 != 0 ? (index % 2 === 0 ? '70%' : '15%') : index % 2 != 0 ? '70%' : '15%'};
-							left: 50%;
+							top: ${ data.row % 2 != 0 ? (index % 2 === 0 ? '65%' : '8%') : index % 2 != 0 ? '65%' : '8%'};
 							font-size: 18px;
-							line-height: 1;
-							transform: translate(-50%);
 							text-align: center;
 							text-overflow: ellipsis;
 							white-space: nowrap;
@@ -252,36 +274,27 @@
 					}).text(routeBusStop.bus_stop_name).appendTo(column)
 				}
 
-				if (data.value != -1 && !isFound && data.value.bus_stop_code == busStop.bus_stop_code) {
-					isFound = true
+				if (data.value != -1 && data.value.current_bus_top) {
 					return data.row === 1 ? 0 : 100 * data.row
 				} else {
 					return 0
 				}
 			})
 
-			const scrollPosition = _.sum(await Promise.all(promises))
+			const scrollPosition = _.sum(scrollingPositionList)
 			if (scrollPosition > 30) {
 				busRouteListDiv.animate(
 					{
-						scrollTop: scrollPosition - 35
+						scrollTop: scrollPosition - 100
 					},
 					300
 				)
 			}
-			// if(scrollPosition != 0) $('<i>', {
-			// 	class: 'position-absolute material-icons',
-			// 	style: `color: blue; top: 25%; left: 85%;`
-			// }).text('directions_bus').appendTo($('#46531'))
-			// $('<i>', {
-			// 	class: 'position-relative material-icons',
-			// 	style: `top: ${scrollPosition - 56}px; left: 70%; color: blue; transform: translate(-50%, -50%);`
-			// }).text('directions_bus').appendTo(busMap)
-			// $('<i>', {
-			// 	class: 'position-relative material-icons',
-			// 	style: `top: 1905px; left: 85%; color: blue; transform: translate(-50%, -50%);`
-			// }).text('directions_bus').appendTo(busMap)
+
+			return 0
 		})
+
+		setLiveBusTiming(nextBusList)
 
 		const btnDismiss = $('<button>', {
 			class: 'waves-effect waves-light btn-flat d-flex justify-content-center align-items-center'
@@ -327,6 +340,10 @@
 		const busServiceDiv = $('#busService')
 		busServiceDiv.empty()
 
+		$(`#first`).remove()
+		$(`#second`).remove()
+		$(`#third`).remove()
+
 		if (!nextBusList || nextBusList.NextBus.EstimatedArrival == '') {
 			$('<div>', {
 				class: `w-100 d-flex justify-content-center align-items-center grey-text text-lighten-1 fw-bold`,
@@ -339,10 +356,22 @@
 			return
 		}
 
+		let busRouteList = _.find(
+			busServiceRouteList, 
+			group => _.some(
+				group,
+				{
+					value: {
+						current_bus_top: true
+					}
+				}
+			)
+		)
+
 		const isHasBusTwo = nextBusList.NextBus2.EstimatedArrival != ''
 		const isHasBusThree = nextBusList.NextBus3.EstimatedArrival != ''
 
-		getNextBusCard(nextBusList.NextBus).appendTo(
+		getNextBusCard(busRouteList, `first`, nextBusList.NextBus).appendTo(
 			$('<div>', {
 				class: `col-${isHasBusTwo && isHasBusThree ? 4 : isHasBusTwo ? 6 : 12}`,
 				style: 'height: 120px;'
@@ -350,7 +379,7 @@
 		)
 
 		if (isHasBusTwo) {
-			getNextBusCard(nextBusList.NextBus2).appendTo(
+			getNextBusCard(busRouteList, `second`, nextBusList.NextBus2).appendTo(
 				$('<div>', {
 					class: `col-${isHasBusThree ? 4 : 6}`,
 					style: 'height: 120px;'
@@ -359,7 +388,7 @@
 		}
 
 		if (isHasBusThree) {
-			getNextBusCard(nextBusList.NextBus3).appendTo(
+			getNextBusCard(busRouteList, `third`, nextBusList.NextBus3).appendTo(
 				$('<div>', {
 					class: 'col-4',
 					style: 'height: 120px;'
@@ -368,7 +397,8 @@
 		}
 	}
 
-	function getNextBusCard(nextBus) {
+	function getNextBusCard(busRouteList, id, nextBus) {
+		// console.log(busRouteList)
 		const min = $.convertArrivalMin(nextBus.EstimatedArrival)
 
 		const div = $('<div>', {
@@ -390,7 +420,40 @@
 				style: 'bottom: .5rem; right: .5rem;'
 			}).text('accessible').appendTo(div)
 		}
+
+		const busStop = _.minBy(
+			busRouteList.filter(busRoute => busRoute.value != -1 ),
+			(busRoute) => {
+				return haversine(nextBus.Latitude, nextBus.Longitude, busRoute.value.route_bus_stop.latitude, busRoute.value.route_bus_stop.longitude)
+			}
+		)
+
+		// console.log(busStop.value)
+		//const left = calculateBulletPosition(nextBus.Latitude, busStop.value.route_bus_stop.latitude)
+		// if(id == 'first') {
+		// 	console.log(min, busStop.value.route_bus_stop.bus_stop_name, busStop.value.route_bus_stop.latitude, nextBus.Latitude, left)
+		// }
+		$('<i>', {
+			id: id,
+			class: 'position-absolute material-icons',
+			style: `color: blue; z-index: 99;` //left: ${left}%; 
+		}).text('directions_bus').appendTo($(`#${busStop.value.bus_stop_code}`))
+
+		// console.log(nextBus)
+
 		return div
+	}
+
+	function haversine(lat1, lon1, lat2, lon2) {
+		const R = 6371
+		const dLat = (lat2 - lat1) * Math.PI / 180
+		const dLon = (lon2 - lon1) * Math.PI / 180
+
+		const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+
+		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+		return R * c
 	}
 
 	function setPopover(tag, title, operations) {
@@ -444,42 +507,5 @@
 				setPopover(tag, title, operations)
 			}
 		})
-	}
-
-	function setCssOrder(idList) {
-		return
-		if ($('#busDetailDialogCss')) $('#busDetailDialogCss').remove()
-		let small = ''
-		let large = ''
-
-		idList.forEach( (id, index) => {
-			small += `
-				#id${id} {
-					order: ${id == 0 ? 1 : id == 1 ? 0 : id}
-				}
-			`
-			large += `
-				#id${id} {
-					order: ${index}
-				}
-			`
-		})
-
-		const style = $('<style>')
-		style.appendTo($('head'))
-		style.prop('type', 'text/css')
-		style.attr('id', 'busDetailDialogCss')
-
-		style.text(
-			`
-				@media (max-width: 576px) {
-					${small}
-				}
-
-				@media (min-width: 576px) {
-					${large}
-				}
-			`
-		)
 	}
 }(jQuery))
