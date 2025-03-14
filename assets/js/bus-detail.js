@@ -225,7 +225,9 @@
 					const routeBulletAnimation = $('<span>', {
 						class: 'position-absolute bus-stop-point ripple',
 					})
-					routeBulletAnimation.appendTo(column)
+					if (data.value.current_bus_top) {
+						routeBulletAnimation.appendTo(column)
+					}
 
 					const routeBullet = $('<span>', {
 						class: 'position-absolute bus-stop-point',
@@ -398,7 +400,6 @@
 	}
 
 	function getNextBusCard(busRouteList, id, nextBus) {
-		// console.log(busRouteList)
 		const min = $.convertArrivalMin(nextBus.EstimatedArrival)
 
 		const div = $('<div>', {
@@ -421,25 +422,81 @@
 			}).text('accessible').appendTo(div)
 		}
 
-		const busStop = _.minBy(
+		let startBusStop = _.minBy(
 			busRouteList.filter(busRoute => busRoute.value != -1 ),
 			(busRoute) => {
 				return haversine(nextBus.Latitude, nextBus.Longitude, busRoute.value.route_bus_stop.latitude, busRoute.value.route_bus_stop.longitude)
 			}
 		)
+		let endBusStop = null
 
-		// console.log(busStop.value)
-		//const left = calculateBulletPosition(nextBus.Latitude, busStop.value.route_bus_stop.latitude)
-		// if(id == 'first') {
-		// 	console.log(min, busStop.value.route_bus_stop.bus_stop_name, busStop.value.route_bus_stop.latitude, nextBus.Latitude, left)
-		// }
-		$('<i>', {
-			id: id,
-			class: 'position-absolute material-icons',
-			style: `color: blue; z-index: 99;` //left: ${left}%; 
-		}).text('directions_bus').appendTo($(`#${busStop.value.bus_stop_code}`))
+		const startIndex = _.indexOf(busRouteList, startBusStop)
+		let endIndex = startIndex
 
-		// console.log(nextBus)
+		if (nextBus.Latitude > startBusStop.value.route_bus_stop.latitude) {
+			if (_.includes(startBusStop.curve, 'curve-above-right')) {
+				endIndex -= 1
+			} else if (_.includes(startBusStop.curve, 'curve-below-right') || _.includes(startBusStop.curve, 'curve-below-left')) {
+				endIndex += 2
+			} else if (_.includes(startBusStop.curve, 'curve-above-right') || _.includes(startBusStop.curve, 'curve-above-left')) {
+				endIndex += 1
+			}
+		} else {
+			if (_.includes(startBusStop.curve, 'curve-above-left') || _.includes(startBusStop.curve, 'curve-above-right')) {
+				endIndex -= 2
+			} else if (_.includes(startBusStop.curve, 'curve-below-right')) {
+				endIndex -= 1
+			} else if (_.includes(startBusStop.curve, 'curve-below-left')) {
+				endIndex += 1
+			}
+		}
+		if (endIndex > 0 && endIndex < busRouteList.length) {
+			endBusStop = busRouteList[endIndex]
+		}
+		if (endBusStop && endBusStop.value.sequence < startBusStop.value.sequence) {
+			let tmp = startBusStop
+			startBusStop = endBusStop
+			endBusStop = tmp
+		}
+		if (endBusStop === null) {
+			endBusStop = startBusStop
+		}
+		let log = `${id} Bus is `
+		if (nextBus.Latitude > startBusStop.value.route_bus_stop.latitude) {
+			log += `left from ${startBusStop.value.route_bus_stop.bus_stop_name}`
+		} else if (nextBus.Latitude < endBusStop.value.route_bus_stop.latitude) {
+			log += `not arrive to ${endBusStop.value.route_bus_stop.bus_stop_name}`
+		}
+
+		const startLat = startBusStop.value.route_bus_stop.latitude
+		const endLat = endBusStop.value.route_bus_stop.latitude
+
+		const startStopEl = $(`#${startBusStop.value.bus_stop_code}`)
+		const endStopEl = $(`#${endBusStop.value.bus_stop_code}`)
+
+		const startOffset = startStopEl.offset()
+		const endOffset = endStopEl.offset()
+
+		const totalLatDiff = endLat - startLat
+		const currentLatDiff = nextBus.Latitude - startLat
+
+		const totalDistance = endOffset.top - startOffset.top
+		const positionTop = startOffset.top + (currentLatDiff / totalLatDiff) * totalDistance
+
+		let positionLeft = '50%'
+		if (nextBus.Latitude > startLat) {
+			positionLeft = 'calc(50% + 25px)'
+		} else if (nextBus.Latitude < startLat) {
+			positionLeft = 'calc(50% - 25px)'
+		}
+
+		if (nextBus.Latitude != '0.0' && nextBus.Longitude != '0.0') {
+			$('<i>', {
+				id: id,
+				class: 'position-absolute material-icons',
+				style: `color: blue; left: ${positionLeft}; z-index: top: ${positionTop}px;`
+			}).text('directions_bus').appendTo($(`#${startBusStop.value.bus_stop_code}`));
+		}
 
 		return div
 	}
