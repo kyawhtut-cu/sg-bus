@@ -13,15 +13,11 @@
 		}
 	}
 
-	const onFetchBusArrival = async (busServiceNo, busStopCode) => {
+	const onFetchBusArrival = async (busStopCode, busServiceNo) => {
 		try {
-			const response = await Api.get(`v3/BusArrival?ServiceNo=${busServiceNo}&BusStopCode=${busStopCode}`)
+			const response = await Api.get(`v3/BusArrival?ServiceNo=${busServiceNo ?? ''}&BusStopCode=${busStopCode}`)
 
-			return {
-				bus_service_no: busServiceNo,
-				bus_stop_code: busStopCode,
-				bus_service_list: response.Services
-			}
+			return response.Services
 		} catch (error) {
 			return null
 		}

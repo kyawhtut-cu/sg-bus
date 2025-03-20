@@ -17,6 +17,7 @@
 			getBusStopByStopCode,
 			getBusServiceByServiceNo,
 			onInsertLiveBusServiceList,
+			onUpdateSavedBusServiceNo,
 			getColumnCount,
 			setColumnCount,
 			onFetchBusArrival
@@ -71,6 +72,21 @@
 		await Db.onInsertLiveBusServiceList(list)
 	}
 
+	async function onUpdateSavedBusServiceNo(newServiceNo, oldServiceNo, busStopCode) {
+		const savedBusList = await getSavedBusList()
+		const obj = _.find(
+			savedBusList, 
+			{
+				bus_stop_code: busStopCode,
+				bus_service_no: oldServiceNo
+			}
+		)
+		if (obj) {
+			obj.bus_service_no = newServiceNo
+		}
+		await onInsertLiveBusServiceList(savedBusList)
+	}
+
 	function getColumnCount() {
 		return localStorage.getItem('column_count') ?? 1
 	}
@@ -80,19 +96,38 @@
 	}
 
 	async function onFetchBusArrival(savedBusList) {
-		let result = await Promise.all(
-			savedBusList.map( savedBus => {
-				return ApiService.onFetchBusArrival(
-					savedBus.bus_service_no,
-					savedBus.bus_stop_code
+		const serviceList = await Promise.all(
+			_.uniqBy(savedBusList, 'bus_stop_code').map( async savedBus => {
+				const busServiceList = await ApiService.onFetchBusArrival(
+					savedBus.bus_stop_code,
+					null
 				)
+
+				return {
+					bus_stop_code: savedBus.bus_stop_code,
+					bus_service_list: busServiceList
+				}
 			})
 		)
-		return result.filter( service => service != null)
 
-		return ApiService.onFetchBusArrival(
-			busServiceNo,
-			busStopCode
+		return _.compact(
+			savedBusList.map( savedBus => {
+				const busServiceList = _.find(
+					serviceList, 
+					{
+						bus_stop_code : savedBus.bus_stop_code
+					}
+				)?.bus_service_list
+				
+				if (busServiceList == null) return null
+				
+				return {
+					index: savedBus.index,
+					bus_service_no: savedBus.bus_service_no,
+					bus_stop_code: savedBus.bus_stop_code,
+					bus_service_list: busServiceList
+				}
+			})
 		)
 	}
 

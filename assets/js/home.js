@@ -111,7 +111,7 @@
 
 	async function onReloadLiveService() {
 		const savedBusList = await Promise.all(
-			(await Repo.getSavedBusList()).map( async (savedBus) => {
+			(await Repo.getSavedBusList()).map( async (savedBus, index) => {
 				const busService = await Repo.getBusServiceByServiceNo(savedBus.bus_service_no)
 				let operation = _.find(busService.bus_route_list, { bus_stop_code : savedBus.bus_stop_code })
 				if (operation) {
@@ -135,10 +135,15 @@
 				} else {
 					operation = []
 				}
+
+				const busStop = await Repo.getBusStopByStopCode(savedBus.bus_stop_code)
+
 				return {
+					index: index,
 					bus_service_no: savedBus.bus_service_no,
 					bus_stop_code: savedBus.bus_stop_code,
-					bus_stop_name: (await Repo.getBusStopByStopCode(savedBus.bus_stop_code))?.bus_stop_name ?? '',
+					bus_stop_name: busStop?.bus_stop_name ?? '',
+					bus_stop_service_list: busStop?.bus_service_no_list ?? [],
 					bus_operation: operation
 				}
 			})
@@ -172,12 +177,6 @@
 			colDiv.addClass(`col-lg-${largeColumnCount} col-md-12 col-sm-12`)
 		}
 
-		const headerDiv = $('<div>', {
-			class: 'w-100 bg-light d-flex header testClass',
-			style: 'margin-top: .5rem;'
-		})
-		headerDiv.appendTo(colDiv)
-
 		const popOver = $('<div>', {
 			class: 'w-100 position-absolute',
 			style: 'height: 56px; top: 8px; left: 8px; cursor: pointer;'
@@ -189,11 +188,36 @@
 			savedBus.bus_operation
 		)
 
+		const headerDiv = $('<div>', {
+			class: 'w-100 bg-light d-flex header testClass',
+			style: 'margin-top: .5rem;'
+		})
+		headerDiv.appendTo(colDiv)
+
 		const busServiceNo = $('<div>', {
-			class: 'h-100 text-white red d-flex justify-content-center align-items-center fw-bold busServiceNo'
+			class: 'h-100 btn-flat waves-effect text-white red d-flex justify-content-center align-items-center fw-bold busServiceNo',
+			'data-target': savedBus.bus_service_no
 		}).text(savedBus.bus_service_no)
 		busServiceNo.appendTo(headerDiv)
-		
+
+		const dropdownBusServiceNo = $('<ul>', {
+			id: savedBus.bus_service_no,
+			class: 'dropdown-content'
+		})
+		dropdownBusServiceNo.appendTo(headerDiv)
+
+		savedBus.bus_stop_service_list.forEach( service => {
+			const li = $('<li>', {
+				class: 'btn-flat waves-effect align-items-center d-flex'
+			}).text(service)
+			li.appendTo(dropdownBusServiceNo)
+			li.on('click', async () => {
+				await Repo.onUpdateSavedBusServiceNo(service, savedBus.bus_service_no, savedBus.bus_stop_code)
+				onReloadLiveService()
+			})
+		})
+		busServiceNo.dropdown()
+
 		$('<p>', {
 			class: 'w-100 m-0'
 		}).text(savedBus.bus_stop_name).appendTo(
@@ -218,7 +242,7 @@
 		})
 
 		const liveDiv = $('<div>', {
-			id: `busLive${savedBus.bus_service_no}${savedBus.bus_stop_code}`,
+			id: `busLive${savedBus.index}${savedBus.bus_service_no}${savedBus.bus_stop_code}`,
 			class: `d-flex justify-content-center align-items-center`,
 			style: 'height: calc(100% - 56px - .5rem);',
 		})
@@ -263,12 +287,25 @@
 
 		busArrivalList.forEach( service => {
 			const key = `${service.bus_service_no}-${service.bus_stop_code}`
-			nextBusList[key] = _.first(service.bus_service_list)
+			nextBusList[key] = _.find(
+				service.bus_service_list,
+				{
+					ServiceNo: service.bus_service_no
+				}
+			)
+
+			const busServiceList = _.find(
+				service.bus_service_list,
+				{
+					ServiceNo: service.bus_service_no
+				}
+			)
+
 			if (BusDetail?.getKey() == key) {
-				BusDetail?.setLiveBusTiming(_.first(service.bus_service_list))
+				BusDetail?.setLiveBusTiming(busServiceList)
 			}
 
-			const busLiveDiv = $(`#busLive${service.bus_service_no}${service.bus_stop_code}`)
+			const busLiveDiv = $(`#busLive${service.index}${service.bus_service_no}${service.bus_stop_code}`)
 			busLiveDiv.empty()
 
 			const rowDiv = $('<div>', {
@@ -278,7 +315,7 @@
 
 			getBusArrival(
 				rowDiv,
-				_.first(service.bus_service_list),
+				busServiceList,
 				row
 			)
 		})
