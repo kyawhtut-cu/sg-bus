@@ -64,7 +64,44 @@
 	}
 
 	async function getBusServiceByServiceNo(serviceNo) {
-		return Db.getBusServiceByServiceNo(serviceNo)
+		let busService = await Db.getBusServiceByServiceNo(serviceNo)
+
+		let directionList = busService.bus_direction_list
+		let busServiceRouteList = busService.bus_route_list
+		const busLoopStopCodeIndex = _.findIndex(
+			busServiceRouteList,
+			{
+				bus_stop_code : busService.bus_loop_stop_code
+			}
+		)
+		if (directionList.length == 1 && busLoopStopCodeIndex >= 0) {
+			directionList = [1, 2]
+			busServiceRouteList = []
+			busService.bus_route_list.forEach( (route, index) => {
+				let newRoute = route
+				if (index >= busLoopStopCodeIndex) {
+					if (index == busLoopStopCodeIndex) {
+						busServiceRouteList.push($.extend({}, newRoute))
+					}
+					newRoute['direction'] = 2
+				}
+				busServiceRouteList.push(newRoute)
+			})
+		}
+
+		busServiceRouteList = await Promise.all(
+			_.map(
+				busServiceRouteList.slice(),
+				async (busRoute) => {
+					busRoute['route_bus_stop'] = await getBusStopByStopCode(busRoute.bus_stop_code)
+					return busRoute
+				}
+			)
+		)
+
+		busService.bus_route_list = busServiceRouteList
+
+		return busService
 	}
 
 	async function onInsertLiveBusServiceList(list) {
@@ -72,17 +109,15 @@
 		await Db.onInsertLiveBusServiceList(list)
 	}
 
-	async function onUpdateSavedBusServiceNo(newServiceNo, oldServiceNo, busStopCode) {
+	async function onUpdateSavedBusServiceNo(oldSavedBus, newSavedBus) {
 		const savedBusList = await getSavedBusList()
 		const obj = _.find(
-			savedBusList, 
-			{
-				bus_stop_code: busStopCode,
-				bus_service_no: oldServiceNo
-			}
+			savedBusList,
+			oldSavedBus,
 		)
 		if (obj) {
-			obj.bus_service_no = newServiceNo
+			obj.bus_service_no = newSavedBus.bus_service_no
+			obj.bus_stop_code = newSavedBus.bus_stop_code
 		}
 		await onInsertLiveBusServiceList(savedBusList)
 	}

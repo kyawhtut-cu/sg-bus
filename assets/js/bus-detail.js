@@ -73,36 +73,6 @@
 
 		let directionList = busService.bus_direction_list
 		busServiceRouteList = busService.bus_route_list
-		const busLoopStopCodeIndex = _.findIndex(
-			busServiceRouteList,
-			{
-				bus_stop_code : busService.bus_loop_stop_code
-			}
-		)
-		if (directionList.length == 1 && busLoopStopCodeIndex >= 0) {
-			directionList = [1, 2]
-			busServiceRouteList = []
-			busService.bus_route_list.forEach( (route, index) => {
-				let newRoute = route
-				if (index >= busLoopStopCodeIndex) {
-					if (index == busLoopStopCodeIndex) {
-						busServiceRouteList.push($.extend({}, newRoute))
-					}
-					newRoute['direction'] = 2
-				}
-				busServiceRouteList.push(newRoute)
-			})
-		}
-
-		busServiceRouteList = await Promise.all(
-			_.map(
-				busServiceRouteList.slice(),
-				async (busRoute) => {
-					busRoute['route_bus_stop'] = await Repo.getBusStopByStopCode(busRoute.bus_stop_code)
-					return busRoute
-				}
-			)
-		)
 
 		let isFound = false
 		busServiceRouteList = _.mapValues(
