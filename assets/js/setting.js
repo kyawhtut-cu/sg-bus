@@ -20,7 +20,7 @@
 			id: 'settingDialog',
 			class: 'modal modal-fixed-footer'
 		})
-		dialogDiv.appendTo($('body'))
+		dialogDiv.appendTo($('#content'))
 
 		const contentDiv = $('<div>', {
 			style: 'height: calc(100% - 56px); display: flex; flex-direction: column;'
@@ -242,27 +242,22 @@
 		})
 		busStopNameInput.appendTo(busStopName)
 
-		var data = []
-		busStopList.forEach(busStop => data.push({
-			id: busStop.bus_stop_code,
-			text: `${busStop.bus_stop_code}-${busStop.bus_stop_name}`,
-			bus_stop_name: busStop.bus_stop_name,
-			selected: busStop.bus_stop_code == busService.bus_stop_code
-		}) )
-
-		$(`#busStopName${busService.index}`).select2({
+		busStopNameInput.select2({
 			placeholder: 'Select Bus Stop',
 			search: 'Search Bus Stop',
-			data: data,
+			data: busStopList.map(busStop => {
+				return {
+					id: busStop.bus_stop_code,
+					text: `${busStop.bus_stop_code}-${busStop.bus_stop_name}`,
+					bus_stop_name: busStop.bus_stop_name,
+					selected: busStop.bus_stop_code == busService.bus_stop_code
+				}
+			}),
 			dropdownAutoWidth: false,
 			templateSelection: (selection) => {
 				return selection.bus_stop_name ?? selection.text
 			}
 		})
-
-		if (busService.bus_stop_code == '') {
-			$(`#busStopName${busService.index}`).val(null).trigger('change')
-		}
 
 		busStopNameInput.on('select2:select', function (e) {
 			const data = e.params.data
@@ -279,7 +274,7 @@
 				busService.index,
 				busService
 			)
-			setBusServiceNoList(busService)
+			setBusServiceNoList(busServiceNoInput, busService)
 		})
 
 		const busStopNameLabel = $('<label>', {
@@ -298,7 +293,7 @@
 		})
 		busServiceNoInput.appendTo(busServiceNo)
 
-		setBusServiceNoList(busService)
+		setBusServiceNoList(busServiceNoInput, busService)
 
 		busServiceNoInput.on('select2:select', function(e) {
 			const data = e.params.data
@@ -317,7 +312,7 @@
 		busServiceNoLabel.appendTo(busServiceNo)
 
 		const btnTrash = $('<i>', {
-			class: 'material-icons waves-effect btn-flat setting-trash position-absolute'
+			class: 'material-icons waves-effect btn-flat setting-trash position-absolute top-0 end-0 d-flex align-items-center'
 		}).text('delete_forever')
 		btnTrash.appendTo(card)
 
@@ -327,8 +322,8 @@
 		})
 	}
 
-	function setBusServiceNoList(busService) {
-		$(`#busServiceNo${busService.index}`).empty()
+	function setBusServiceNoList(busServiceNoInput, busService) {
+		busServiceNoInput.empty()
 		var data = []
 		_.find(
 			busStopList,
@@ -342,7 +337,7 @@
 				selected: busService.bus_service_no == serviceNo
 			})
 		})
-		$(`#busServiceNo${busService.index}`).select2({
+		busServiceNoInput.select2({
 			placeholder: 'Select Bus Service No.',
 			search: 'Search Bus Service No.',
 			data: data
@@ -352,7 +347,7 @@
 
 		if (busService.bus_service_no == '') {
 			busService = _.set(busService, 'is_show_error', false)
-			$(`#busServiceNo${busService.index}`).val(null).trigger('change')
+			busServiceNoInput.val(null).trigger('change')
 		}
 
 		onDataUpdateByIndex(

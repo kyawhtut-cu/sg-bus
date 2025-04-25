@@ -3,6 +3,8 @@
 	let ApiService = null
 	let Db = null
 	const VERSION = 2
+	const LAST_INSERTED_TIME = 'lastInsertedTime'
+	const LAST_UPDATED_TIME = 'lastUpdatedTime'
 
 	jQuery.Repo = function (db, apiService) {
 		ApiService = apiService
@@ -11,13 +13,15 @@
 		return {
 			init,
 			onUpdateData,
-			isNeedToDataUpdate,
+			isNeedToLoadData,
+			isUpdateAvailable,
 			getBusStopList,
 			getSavedBusList,
 			getBusStopByStopCode,
 			getBusServiceByServiceNo,
 			onInsertLiveBusServiceList,
 			onUpdateSavedBusServiceNo,
+			onDismissUpdate,
 			getColumnCount,
 			setColumnCount,
 			onFetchBusArrival
@@ -29,26 +33,33 @@
 		if (VERSION != currentVersion) {
 			await Db.onDropDb($.SG_BUS_DB)
 			await Db.onDropDb($.SG_BUS_RESPONSE_DB)
-			localStorage.removeItem('lastUpdatedTime')
-			localStorage.removeItem('lastInsertedTime')
+			localStorage.removeItem(LAST_UPDATED_TIME)
+			localStorage.removeItem(LAST_INSERTED_TIME)
 			localStorage.setItem("version", VERSION)
 		}
 	}
 
-	async function onUpdateData(isForce = false) {
-		if (isForce) {
-			localStorage.removeItem('lastUpdatedTime')
-			localStorage.removeItem('lastInsertedTime')
-		}
-		if(!isNeedToDataUpdate()) return
+	async function onUpdateData() {
+		localStorage.removeItem(LAST_UPDATED_TIME)
 
-		await onLoadData(isForce)
+		await onLoadData()
 
-		await onInsertData(isForce)
+		localStorage.removeItem(LAST_INSERTED_TIME)
+
+		await onInsertData()
 	}
 
-	function isNeedToDataUpdate() {
-		return needsToUpdate('lastUpdatedTime') || needsToUpdate('lastInsertedTime')
+	function isNeedToLoadData() {
+		return needsToUpdate(LAST_UPDATED_TIME) == null || needsToUpdate(LAST_INSERTED_TIME) == null
+	}
+
+	function isUpdateAvailable() {
+		return needsToUpdate(LAST_UPDATED_TIME) == true || needsToUpdate(LAST_INSERTED_TIME) == true
+	}
+
+	function onDismissUpdate() {
+		localStorage.setItem(LAST_UPDATED_TIME, new Date().toString())
+		localStorage.setItem(LAST_INSERTED_TIME, new Date().toString())
 	}
 
 	async function getBusStopList() {
@@ -167,7 +178,6 @@
 	}
 
 	async function onLoadData() {
-		if(!needsToUpdate('lastUpdatedTime')) return
 		const [busRouteList, busStopList, busServiceList] = await Promise.all([
 			ApiService.onFetchBusRouteList(),
 			ApiService.onFetchBusStopList(),
@@ -182,11 +192,10 @@
 		await Db.onInsertBusServiceResponseList(busServiceList)
 		await Db.onInsertBusStopResponseList(busStopList)
 
-		localStorage.setItem('lastUpdatedTime', new Date().toString())
+		localStorage.setItem(LAST_UPDATED_TIME, new Date().toString())
 	}
 
 	async function onInsertData() {
-		if(!needsToUpdate('lastInsertedTime')) return
 
 		const responseBusRouteList = await Db.getResponseBusRouteList()
 		const responseBusStopList = await Db.getResponseBusStopList()
@@ -270,14 +279,14 @@
 		)
 		console.log("Bus Service List inserted")
 
-		localStorage.setItem('lastInsertedTime', new Date().toString())
+		localStorage.setItem(LAST_INSERTED_TIME, new Date().toString())
 	}
 
 	function needsToUpdate(key) {
 		const lastUpdatedTime = localStorage.getItem(key)
 
 		if (!lastUpdatedTime) {
-			return true
+			return null
 		}
 
 		const lastUpdatedDate = new Date(lastUpdatedTime)

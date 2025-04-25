@@ -40,50 +40,58 @@
 
 	<style>
 
-		.column {
-			background: #fafafa;
-		}
-
 		.column .header {
+			height: 56px;
 			transition: box-shadow .25s, -webkit-box-shadow .25s;
 			border-radius: 7px;
-			box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14),0 3px 1px -2px rgba(0,0,0,0.12),0 1px 5px 0 rgba(0,0,0,0.2);height: 56px;
+			box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
 		}
 
-		.header .busServiceNo {
-			min-width: 100px;
-			padding: 0 1.5rem;
-			border-radius: 7px 0px 32px 7px;
-			font-size: 36px;
+		.header .drop-down {
+			width: 100%!important;
+			height: 100%!important;
 		}
 
-		.header .busStopName {
-			width: 0%;
-			font-size: 36px;
+		.drop-down .selection span {
+			height: 100%!important;
+			border: unset!important;
+			margin: unset!important;
 		}
 
-		.busStopName p {
-			text-overflow: ellipsis;
-			white-space: nowrap;
+		.drop-down .select2-selection__arrow {
+			display: none!important;
+		}
+
+		.drop-down .select2-selection__rendered {
+			padding: unset!important;
+			line-height: unset!important;
+		}
+
+		.busServiceNo .select2-selection__rendered {
+			min-width: 90px;
+			background-color: red;
+			border-radius: 7px 0px 32px 7px!important;
+			padding: 0 16px!important;
+		}
+
+		.busStopName {
 			overflow: hidden;
 		}
 
-		.setting-dialog {
-			background: rgb(244, 247, 254);
-			border-radius: 8px;
+		.busStopName .select2-selection__rendered {
+			padding: 0 0 0 16px!important;
 		}
+
 
 		.setting-trash {
 			height: 56px;
-			top: 0;
-			right: 0;
-			padding: 16px;
-			cursor: pointer;
 		}
 
 	</style>
 </head>
 <body>
+
+	<div id="content"></div>
 
 	<!-- Scripts -->
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -113,13 +121,9 @@
 			const Home = $.Home(Repo)
 
 			await Repo.init()
-
 			await Db.initData()
-			if (Repo.isNeedToDataUpdate()) {
-				Home.showLoading()
-				await Repo.onUpdateData()
-			}
-			Home.showHome()
+
+			Home.init(Repo.isNeedToLoadData())
 
 			async function preventScreenSaver() {
 				try {

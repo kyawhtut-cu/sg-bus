@@ -82,9 +82,14 @@
 	color: #26a69a;
 	line-height: 1.5rem;
 	min-height: 50px;
-	display: flex;
 	align-items: center;
 	padding: 14px 16px;
+}
+
+.select2-results__options .select2-results__group {
+	color: #292E49;
+	padding: 6px 16px!important;
+	font-weight: bold;
 }
 
 .select2-results__option {

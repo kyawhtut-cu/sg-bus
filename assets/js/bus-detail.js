@@ -25,7 +25,7 @@
 			class: 'modal modal-fixed-footer',
 			style: 'height: 90%; max-height: unset!important; top: 0!important; bottom: 10%!important;'
 		})
-		dialogDiv.appendTo($('body'))
+		dialogDiv.appendTo($('#content'))
 
 		const contentDiv = $('<div>', {
 			style: 'height: calc(100% - 56px); display: flex; flex-direction: column;'
@@ -71,14 +71,19 @@
 		})
 		busDirectionTab.appendTo(busRouteDiv)
 
-		let directionList = busService.bus_direction_list
 		busServiceRouteList = busService.bus_route_list
 
 		let isFound = false
+		let foundDirection = 1
 		busServiceRouteList = _.mapValues(
 			_.groupBy(busServiceRouteList, 'direction'), 
 			(routeList) => {
-				return _(routeList).chunk(2).map( (chunk, index, arrayChunks) => {
+				return _(
+					routeList.map( (route, index) => {
+						route.disabled = index + 1 >= routeList.length
+						return route
+					})
+				).chunk(2).map( (chunk, index, arrayChunks) => {
 					if (chunk.length === 1 && arrayChunks.length === index + 1) {
 						chunk = _.concat(chunk, -1)
 					}
@@ -124,7 +129,8 @@
 							}
 						}
 
-						if (value != -1 && !isFound && value.bus_stop_code == busStop.bus_stop_code) {
+						if (value != -1 && !value.disabled && !isFound && value.bus_stop_code == busStop.bus_stop_code) {
+							foundDirection = value.direction
 							isFound = true
 							value['current_bus_top'] = true
 						}
@@ -136,14 +142,6 @@
 		)
 
 		_.map(busServiceRouteList, (busRouteList, direction) => {
-			const isCurrentDirection = _.some(
-				busRouteList,
-				{
-					value: {
-						bus_stop_code : busStop.bus_stop_code
-					}
-				}
-			)
 
 			const tab = $('<li>', {
 				class: 'tab col s3'
@@ -151,7 +149,7 @@
 			tab.appendTo(busDirectionTab)
 			$('<a>', {
 				href: `#tab${direction}`,
-				class: `${isCurrentDirection ? 'active' : ''}`
+				class: `${foundDirection == direction ? 'active' : ''}`
 			}).text(`Direction ${direction}`).appendTo(tab)
 
 			const tabContent = $('<div>', {

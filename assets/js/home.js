@@ -11,19 +11,28 @@
 	jQuery.Home = function (repo) {
 		Repo = repo
 		return {
+			init,
 			showLoading,
 			showHome
 		}
 	}
 
+	async function init(isNeedToLoad) {
+		if (isNeedToLoad) {
+			showLoading()
+			await Repo.onUpdateData()
+		}
+
+		showHome()
+	}
+
 	function showLoading() {
-		if ($('#home')) $('#home').remove()
-		if ($('#btnFab')) $('#btnFab').remove()
+		$('#content').empty()
 
 		$('<div>', {
 			id: 'update',
 			class: 'vh-100'
-		}).appendTo($('body'))
+		}).appendTo($('#content'))
 
 		bodymovin.loadAnimation({
 			container: document.getElementById('update'),
@@ -35,7 +44,8 @@
 	}
 
 	async function showHome() {
-		if ($('#update')) $('#update').remove()
+		$('#content').empty()
+
 		gridDiv = $('<div>', {
 			class: 'row h-100',
 			style: 'padding-bottom: .5rem;'
@@ -45,14 +55,14 @@
 			$('<div>', {
 				id: 'home',
 				class: 'container-fluid vh-100 p-0'
-			}).appendTo($('body'))
+			}).appendTo($('#content'))
 		)
 
 		const fab = $('<div>', {
 			id: 'btnFab',
 			class: 'fixed-action-btn',
 		})
-		fab.appendTo($('body'))
+		fab.appendTo($('#content'))
 
 		$('<i>', {
 			class: 'material-icons large'
@@ -76,10 +86,10 @@
 			}).appendTo(updateDataBtn)
 		)
 
-		updateDataBtn.on('click', async function() {
-			showLoading()
-			await Repo.onUpdateData(true)
-			showHome()
+		updateDataBtn.on('click', function() {
+			clearTimeout(timeoutId)
+			timeoutId = null
+			init(true)
 		})
 
 		const settingButton = $('<li>')
@@ -105,6 +115,30 @@
 		})
 
 		fab.floatingActionButton()
+
+		if (Repo.isUpdateAvailable()) {
+			const updateDiv = $('<div>', {
+				class: 'w-100 position-fixed top-0 z-depth-5 red z-1 d-flex align-items-center justify-content-center text-white ps-3 fs-4 fw-bold',
+				style: 'height: 56px;'
+			}).hide().appendTo($('#content'))
+
+			updateDiv.text('Update Available')
+
+			const btnDismiss = $('<i>', {
+				class: 'h-100 text-white btn-flat waves-effect material-icons d-flex align-items-center position-absolute end-0',
+				style: 'right: 0;'
+			}).text('close')
+			btnDismiss.appendTo(updateDiv)
+
+			btnDismiss.click(() => {
+				updateDiv.slideUp(500, () => {
+					updateDiv.remove()
+				})
+			})
+
+			updateDiv.slideDown(500, () => {
+			})
+		}
 
 		await onReloadLiveService()
 	}
@@ -179,95 +213,118 @@
 		}
 
 		const headerDiv = $('<div>', {
-			class: 'w-100 bg-light d-flex header testClass',
+			class: 'w-100 bg-light d-flex header justify-content-space-between align-items-center',
 			style: 'margin-top: .5rem;'
 		})
 		headerDiv.appendTo(colDiv)
 
-		const busServiceNo = $('<div>', {
-			class: 'h-100 btn-flat waves-effect text-white red d-flex justify-content-center align-items-center fw-bold busServiceNo',
-			'data-target': `${savedBus.index}${savedBus.bus_service_no}`
-		}).text(savedBus.bus_service_no)
-		busServiceNo.appendTo(headerDiv)
-
-		const dropdownBusServiceNo = $('<ul>', {
-			id: `${savedBus.index}${savedBus.bus_service_no}`,
-			class: 'dropdown-content'
+		const divBusServiceNoDropdown = $('<div>', {
+			class: 'busServiceNo h-100',
+			style: 'flex-shrink: 0'
 		})
-		dropdownBusServiceNo.appendTo(headerDiv)
+		divBusServiceNoDropdown.appendTo(headerDiv)
 
-		savedBus.bus_stop_service_list.forEach( service => {
-			const li = $('<li>', {
-				class: 'btn-flat waves-effect align-items-center d-flex'
-			}).text(service)
-			li.appendTo(dropdownBusServiceNo)
-			li.on('click', async () => {
-				await Repo.onUpdateSavedBusServiceNo(
-					{
-						bus_stop_code: savedBus.bus_stop_code,
-						bus_service_no: savedBus.bus_service_no
-					},
-					{
-						bus_stop_code: savedBus.bus_stop_code,
-						bus_service_no: service
-					}
-				)
-				onReloadLiveService()
-			})
+		const btnBusServiceNoDropdown = $('<select>')
+		btnBusServiceNoDropdown.appendTo(divBusServiceNoDropdown)
+
+		btnBusServiceNoDropdown.on('select2:select', async function (e) {
+			const data = e.params.data
+			if (savedBus.bus_service_no == data.text) return
+
+			await Repo.onUpdateSavedBusServiceNo(
+				{
+					bus_stop_code: savedBus.bus_stop_code,
+					bus_service_no: savedBus.bus_service_no
+				},
+				{
+					bus_stop_code: savedBus.bus_stop_code,
+					bus_service_no: data.text
+				}
+			)
+
+			onReloadLiveService()
 		})
-		busServiceNo.dropdown()
 
-		const btnBusStop = $('<div>', {
-			class: 'h-100 d-flex red-text align-items-center fw-bold busStopName flex-grow-1 btn-flat waves-effect',
-			'data-target': `${savedBus.index}${savedBus.bus_bus_stop_code}`
-		}).appendTo(headerDiv)
-
-		const dropdownBusStopList = $('<ul>', {
-			id: `${savedBus.index}${savedBus.bus_bus_stop_code}`,
-			class: 'dropdown-content'
-		})
-		dropdownBusStopList.appendTo(headerDiv)
-
-		_.forEach(
-			_.groupBy(savedBus.bus_route_list, 'direction'), 
-			(routeList, direction) => {
-				$('<li>', {
-					class: 'btn-flat waves-effect align-items-center d-flex',
-					disabled: 'true'
-				}).text(`Direction - ${direction}`).appendTo(dropdownBusStopList)
-				routeList.forEach( route => {
-					const li = $('<li>', {
-						class: 'btn-flat waves-effect align-items-center d-flex'
-					}).text(`${route.route_bus_stop.bus_stop_name} (${route.bus_stop_code})`)
-					li.appendTo(dropdownBusStopList)
-					li.on('click', async () => {
-						await Repo.onUpdateSavedBusServiceNo(
-							{
-								bus_stop_code: savedBus.bus_stop_code,
-								bus_service_no: savedBus.bus_service_no
-							},
-							{
-								bus_stop_code: route.bus_stop_code,
-								bus_service_no: savedBus.bus_service_no
-							}
-						)
-						onReloadLiveService()
-					})
-				})
-				$('<li>', {
-					class: 'divider'
-				}).appendTo(dropdownBusStopList)
+		btnBusServiceNoDropdown.select2({
+			placeholder: 'Select Bus Service No',
+			search: 'Search Bus Service No',
+			data: savedBus.bus_stop_service_list.map(service => {
+				return {
+					id: service,
+					text: service,
+					selected: service == savedBus.bus_service_no
+				}
+			}),
+			dropdownAutoWidth: true,
+			templateSelection: (selection) => {
+				return selection.text
 			}
-		)
-		btnBusStop.dropdown()
+		})
 
-		$('<p>', {
-			class: 'w-100 m-0'
-		}).text(savedBus.bus_stop_name).appendTo(btnBusStop)
+		$('.header .busServiceNo .select2-selection__rendered').addClass('white-text')
+
+		const divBusStopNoDropdown = $('<div>', {
+			class: 'busStopName h-100',
+			style: 'flex: 1;'
+		})
+		divBusStopNoDropdown.appendTo(headerDiv)
+
+		const btnBusStopNoDropdown = $('<select>')
+		btnBusStopNoDropdown.appendTo(divBusStopNoDropdown)
+
+		btnBusStopNoDropdown.on('select2:select', async function (e) {
+			const data = e.params.data
+			if (savedBus.bus_stop_code == data.bus_stop_code) return
+
+			await Repo.onUpdateSavedBusServiceNo(
+				{
+					bus_stop_code: savedBus.bus_stop_code,
+					bus_service_no: savedBus.bus_service_no
+				},
+				{
+					bus_stop_code: data.bus_stop_code,
+					bus_service_no: savedBus.bus_service_no
+				}
+			)
+
+			onReloadLiveService()
+		})
+
+		btnBusStopNoDropdown.select2({
+			placeholder: 'Select Bus Stop',
+			search: 'Search Bus Stop',
+			data: _.map(
+				_.groupBy(savedBus.bus_route_list, 'direction'),
+				(routeList, direction) => {
+					return {
+						text: `Direction - ${direction}`,
+						children: routeList.map((route, index) => {
+							return {
+								id: `${route.bus_stop_code}-${direction}`,
+								text: route.route_bus_stop.bus_stop_name,
+								disabled: index + 1 >= routeList.length,
+								selected: route.bus_stop_code == savedBus.bus_stop_code,
+								bus_stop_code: route.bus_stop_code
+							}
+						})
+					}
+				}
+			),
+			dropdownAutoWidth: true,
+			templateSelection: (selection) => {
+				return selection.text
+			}
+		})
+
+		$('.header .busStopName .select2-selection__rendered').addClass('red-text')
+
+		$('.header .select2-container').addClass('drop-down')
+
+		$('.header .select2-selection__rendered').addClass('fs-1 fw-bold')
 
 		const btnBusTiming = $('<i>', {
 			class: 'material-icons align-self-center btn-flat waves-effect d-flex align-items-center',
-			style: 'height: 56px;'
+			style: 'height: 56px; flex-shrink: 0;'
 		}).text('info_outline')
 		btnBusTiming.appendTo(headerDiv)
 		setPopover(
@@ -278,7 +335,7 @@
 
 		const btnDetail = $('<i>', {
 			class: 'material-icons align-self-center btn-flat waves-effect d-flex align-items-center',
-			style: 'height: 56px;'
+			style: 'height: 56px; flex-shrink: 0;'
 		}).text('directions')
 		btnDetail.appendTo(headerDiv)
 		btnDetail.on('click', async function() {
@@ -514,5 +571,9 @@
 				setPopover(tag, title, operations)
 			}
 		})
+	}
+
+	function onBusChange() {
+		console.log(560)
 	}
 }(jQuery))
