@@ -10,7 +10,7 @@
 	}
 
 	function Api() {
-		baseURL = `http://datamall2.mytransport.sg/ltaodataservice/`
+		baseURL = `https://datamall2.mytransport.sg/ltaodataservice/`
 		accountKey = `Lc5r7QyZRJeKhsjxvRKnbw==`
 	}
 
